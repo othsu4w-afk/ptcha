@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>屏東縣長照派案管理系統 (雲端同步版)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Noto Sans TC', sans-serif; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800">
+
+    <div class="max-w-7xl mx-auto p-4 sm:p-6">
+        <!-- 雲端設定列 -->
+        <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 mb-6 flex flex-wrap items-center justify-between gap-4">
+            <div>
+                <h1 class="text-xl font-bold text-slate-900">屏東縣長照派案管理系統</h1>
+                <p class="text-xs text-slate-500">支援 Google 試算表雲端同步與跨裝置協作</p>
+            </div>
+            <div class="flex items-center gap-2 flex-wrap">
+                <input type="text" id="api_url" placeholder="請輸入 Google Apps Script 網址..." class="px-3 py-1.5 text-sm border border-slate-300 rounded-lg w-72 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <button onclick="saveApiUrl()" class="px-3 py-1.5 bg-slate-800 text-white text-sm rounded-lg hover:bg-slate-700 transition">連結</button>
+                <button onclick="syncFromCloud()" class="px-3 py-1.5 bg-emerald-600 text-white text-sm rounded-lg hover:bg-emerald-500 transition">🔄 從雲端同步資料</button>
+            </div>
+        </div>
+
+        <!-- 系統主內容區 -->
+        <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-lg font-bold">派案清冊</h2>
+                <button onclick="addNewCase()" class="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-500 transition">+ 新增派案</button>
+            </div>
+            <div id="case_list" class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="border-b border-slate-200 text-xs text-slate-500 uppercase bg-slate-50">
+                            <th class="p-3">個案編號</th>
+                            <th class="p-3">個案姓名</th>
+                            <th class="p-3">派案單位</th>
+                            <th class="p-3">狀態</th>
+                            <th class="p-3">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="table_body" class="text-sm divide-y divide-slate-100">
+                        <!-- 資料將透過 JS 動態載入 -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let API_URL = localStorage.getItem('cloud_api_url') || '';
+        let casesData = JSON.parse(localStorage.getItem('local_cases')) || [
+            { id: "P115001", name: "王大明", unit: "A單位", status: "已派案" },
+            { id: "P115002", name: "李阿水", unit: "B單位", status: "評估中" }
+        ];
+
+        document.getElementById('api_url').value = API_URL;
+        renderTable();
+
+        function saveApiUrl() {
+            API_URL = document.getElementById('api_url').value.trim();
+            localStorage.setItem('cloud_api_url', API_URL);
+            alert('API 網址儲存成功！');
+        }
+
+        function renderTable() {
+            const tbody = document.getElementById('table_body');
+            tbody.innerHTML = '';
+            casesData.forEach((item, index) => {
+                tbody.innerHTML += `
+                    <tr class="hover:bg-slate-50">
+                        <td class="p-3 font-medium">${item.id}</td>
+                        <td class="p-3">${item.name}</td>
+                        <td class="p-3">${item.unit}</td>
+                        <td class="p-3"><span class="px-2 py-1 bg-blue-50 text-blue-600 rounded text-xs">${item.status}</span></td>
+                        <td class="p-3">
+                            <button onclick="deleteCase(${index})" class="text-red-500 hover:underline text-xs">刪除</button>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        function addNewCase() {
+            const name = prompt("請輸入個案姓名：");
+            if (!name) return;
+            const newId = "P115" + String(casesData.length + 1).padStart(3, '0');
+            casesData.push({ id: newId, name: name, unit: "預設單位", status: "新案" });
+            saveAndSync();
+        }
+
+        function deleteCase(index) {
+            if (confirm("確定要刪除此筆資料嗎？")) {
+                casesData.splice(index, 1);
+                saveAndSync();
+            }
+        }
+
+        function saveAndSync() {
+            localStorage.setItem('local_cases', JSON.stringify(casesData));
+            renderTable();
+            if (API_URL) {
+                syncToCloud();
+            }
+        }
+
+        // 同步至 Google 試算表
+        function syncToCloud() {
+            if (!API_URL) return;
+            let rows = [["id", "name", "unit", "status"]];
+            casesData.forEach(c => rows.push([c.id, c.name, c.unit, c.status]));
+
+            fetch(API_URL, {
+                method: "POST",
+                mode: "no-cors",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ action: "syncAll", rows: rows })
+            }).then(() => {
+                console.log("已自動同步至雲端試算表");
+            }).catch(err => console.error("同步失敗", err));
+        }
+
+        // 從 Google 試算表同步
+        function syncFromCloud() {
+            if (!API_URL) {
+                alert("請先輸入並儲存 Google Apps Script 網址！");
+                return;
+            }
+            fetch(API_URL)
+                .then(res => res.json())
+                .then(data => {
+                    if (Array.isArray(data) && data.length > 0) {
+                        casesData = data;
+                        localStorage.setItem('local_cases', JSON.stringify(casesData));
+                        renderTable();
+                        alert("成功從雲端同步資料！");
+                    } else {
+                        alert("雲端目前沒有資料或格式不符。");
+                    }
+                })
+                .catch(err => {
+                    alert("同步失敗，請檢查 API 網址是否正確或權限是否設為「任何人」。");
+                    console.error(err);
+                });
+        }
+    </script>
+</body>
+</html>
