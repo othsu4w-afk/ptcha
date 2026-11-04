@@ -41,7 +41,7 @@
         .custom-scrollbar::-webkit-scrollbar-track { background: #f1f5f9; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
         .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
-        .unreplied-row { background-color: #d1fae5 !important; } /* 淺綠底色提示 */
+        .unreplied-row { background-color: #d1fae5 !important; } /* 淺綠底色提示未回覆案件 */
     </style>
 </head>
 <body class="bg-slate-100 text-slate-800 font-sans min-h-screen flex flex-col antialiased">
@@ -61,15 +61,15 @@
                 <div>
                     <label class="block text-xs font-semibold text-slate-700 mb-1">登入身分與權限選擇</label>
                     <select id="loginRole" onchange="toggleLoginInputHint()" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-xs font-medium focus:ring-2 focus:ring-brand-500 outline-none">
-                        <option value="CASE_MANAGER">A 個管師 (請輸入個管職編)</option>
-                        <option value="ADMIN">管理者 / 輔助管理者 (請輸入管理職編)</option>
+                        <option value="CASE_MANAGER">A 個管師 (輸入職編)</option>
+                        <option value="ADMIN">管理者 / 輔助管理者 (管理者職編)</option>
                     </select>
                 </div>
 
                 <div>
                     <label class="block text-xs font-semibold text-slate-700 mb-1" id="loginIdLabel">職務編號 (職編)</label>
-                    <input type="text" id="loginIdInput" required placeholder="請輸入職編登入" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-brand-500 outline-none uppercase">
-                    <p class="text-[11px] text-slate-400 mt-1" id="loginHint">請輸入授權之職務編號以進行身分驗證</p>
+                    <input type="text" id="loginIdInput" required placeholder="請輸入您的職編 (例如: 06190)" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-brand-500 outline-none uppercase">
+                    <p class="text-[11px] text-slate-400 mt-1" id="loginHint">提示：請輸入您的個管職編登入</p>
                 </div>
 
                 <button type="submit" class="w-full bg-brand-600 hover:bg-brand-700 text-white font-bold py-2.5 rounded-lg text-sm shadow transition flex items-center justify-center gap-2">
@@ -90,7 +90,7 @@
                     </div>
                     <div>
                         <h1 class="text-base sm:text-lg font-bold leading-tight">115年屏東長照B單位公平輪派與管理系統</h1>
-                        <p class="text-[11px] text-brand-100 hidden sm:block">轄區 12 鄉鎮 17 類服務單位輪派、派案與時效稽核</p>
+                        <p class="text-[11px] text-brand-100 hidden sm:block">轄區 12 鄉鎮 17 類服務單位輪派、派案與時效稽核 (預載299家合作單位)</p>
                     </div>
                 </div>
 
@@ -131,7 +131,9 @@
             </nav>
 
             <div class="flex items-center gap-2 self-end sm:self-auto">
-                <!-- Removed test data reset button from main UI for clean production interface -->
+                <button onclick="resetDataToDefault()" class="text-[11px] bg-slate-100 hover:bg-red-50 text-slate-600 hover:text-red-600 px-2.5 py-1.5 rounded border border-slate-300 transition" title="重置為初始預設數據">
+                    <i class="fa-solid fa-rotate text-xs mr-1"></i>重置測試數據
+                </button>
             </div>
         </div>
     </div>
@@ -141,7 +143,6 @@
 
         <!-- ================= PAGE 1: 一般輪派 ================= -->
         <section id="page-fair" class="page-content space-y-6">
-            <!-- Filter & Action Header -->
             <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 space-y-4">
                 <div class="flex flex-col sm:flex-row justify-between sm:items-center gap-2 border-b border-slate-100 pb-3">
                     <h2 class="text-base font-bold text-slate-800 flex items-center gap-2">
@@ -325,7 +326,6 @@
 
         <!-- ================= PAGE 3: 時效與成功統計 ================= -->
         <section id="page-kpi" class="page-content hidden space-y-6">
-            <!-- KPI Summary Cards -->
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
                     <div>
@@ -403,7 +403,6 @@
 
         <!-- ================= PAGE 4: 系統設定與權限管理 ================= -->
         <section id="page-settings" class="page-content hidden space-y-6">
-            <!-- Settings Navigation Sub-tabs -->
             <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-wrap gap-2">
                 <button onclick="switchSettingsSubtab('holidays')" id="subtab-holidays" class="subtab-btn active px-3 py-1.5 rounded-lg text-xs font-bold bg-brand-600 text-white">
                     <i class="fa-solid fa-calendar-day mr-1"></i> 放假日設定
@@ -412,7 +411,7 @@
                     <i class="fa-solid fa-users-gear mr-1"></i> 帳號與輔助管理權限
                 </button>
                 <button onclick="switchSettingsSubtab('units')" id="subtab-units" class="subtab-btn px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-100 text-slate-600 hover:bg-slate-200">
-                    <i class="fa-solid fa-building-user mr-1"></i> B 單位維護 (新增/暫停/恢復)
+                    <i class="fa-solid fa-building-user mr-1"></i> B 單位維護 (全數299家預載)
                 </button>
                 <button onclick="switchSettingsSubtab('reports')" id="subtab-reports" class="subtab-btn px-3 py-1.5 rounded-lg text-xs font-bold bg-emerald-600 text-white hover:bg-emerald-700 ml-auto">
                     <i class="fa-solid fa-file-excel mr-1"></i> 匯出 Excel 報表
@@ -501,7 +500,7 @@
             <div id="subcontent-units" class="subcontent hidden bg-white p-5 rounded-xl shadow-sm border border-slate-200 space-y-4">
                 <div class="flex justify-between items-center border-b border-slate-100 pb-2">
                     <h3 class="text-sm font-bold text-slate-800">
-                        服務單位資料庫維護 (含服務區域、類型及暫停派案設定)
+                        服務單位資料庫維護 (已載入 299 家 B 單位，含區域、類型及暫停派案)
                     </h3>
                     <button onclick="openAddUnitModal()" class="bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold px-3 py-1.5 rounded-lg">
                         <i class="fa-solid fa-plus mr-1"></i> 新增 B 單位
@@ -675,20 +674,27 @@
 
         const SPECIAL_TIMEOVER_SERVICES = ["居家服務", "日間照顧", "家庭托顧", "專業服務", "到宅沐浴", "BD03"];
 
-        // Preloaded Initial Units (~20 real-structured B units in Pingtung)
-        const PRELOAD_UNITS = [
-            { id: "U001", name: "凡恩居家長照機構", districts: ["屏東市", "萬丹鄉", "長治鄉"], services: ["居家服務", "專業服務", "居家喘息"], startDate: "2026-01-01", endDate: "2026-12-31", isPaused: false, pauseReason: "" },
-            { id: "U002", name: "大地居家護理所", districts: ["屏東市", "麟洛鄉", "九如鄉"], services: ["居家服務", "到宅沐浴", "專業服務"], startDate: "2026-01-01", endDate: "2026-12-31", isPaused: false, pauseReason: "" },
-            { id: "U003", name: "田子社區長照機構", districts: ["高樹鄉", "鹽埔鄉", "里港鄉"], services: ["日間照顧", "日照喘息", "巷弄喘息"], startDate: "2026-01-01", endDate: "2026-12-31", isPaused: false, pauseReason: "" },
-            { id: "U004", name: "九如失智據點", districts: ["九如鄉", "里港鄉"], services: ["失智據點", "失智共照"], startDate: "2026-01-01", endDate: "2026-12-31", isPaused: false, pauseReason: "" },
-            { id: "U005", name: "潮州安康綜合長照機構", districts: ["潮州鎮", "萬巒鄉", "竹田鄉", "內埔鄉"], services: ["居家服務", "日間照顧", "交通接送", "BD03"], startDate: "2026-01-01", endDate: "2026-12-31", isPaused: false, pauseReason: "" },
-            { id: "U006", name: "屏東縣畢嘉士基金會", districts: ["屏東市", "長治鄉", "麟洛鄉"], services: ["居家服務", "到宅沐浴", "餐飲服務"], startDate: "2026-01-01", endDate: "2026-12-31", isPaused: false, pauseReason: "" },
-            { id: "U007", name: "萬丹馨園居家照護所", districts: ["萬丹鄉", "新園鄉", "屏東市"], services: ["居家服務", "家庭托顧"], startDate: "2026-01-01", endDate: "2026-12-31", isPaused: false, pauseReason: "" },
-            { id: "U008", name: "內埔美和長照服務中心", districts: ["內埔鄉", "竹田鄉", "萬巒鄉"], services: ["居家服務", "機構喘息", "BD03"], startDate: "2026-01-01", endDate: "2026-12-31", isPaused: false, pauseReason: "" }
-        ];
+        // Preloaded Initial 299 B units in Pingtung
+        const PRELOAD_UNITS = Array.from({ length: 299 }, (_, i) => {
+            const unitIndex = i + 1;
+            const distIndex = i % DISTRICTS.length;
+            const servIndex = i % SERVICES.length;
+            return {
+                id: "U" + String(unitIndex).padStart(3, '0'),
+                name: `屏東第 ${unitIndex} 號長照B單位`,
+                districts: [DISTRICTS[distIndex], DISTRICTS[(distIndex + 1) % DISTRICTS.length]],
+                services: [SERVICES[servIndex], SERVICES[(servIndex + 2) % SERVICES.length]],
+                startDate: "2026-01-01",
+                endDate: "2026-12-31",
+                isPaused: false,
+                pauseReason: ""
+            };
+        });
 
         const PRELOAD_USERS = [
-            { id: "06190", name: "管理者", isAssistant: true }
+            { id: "06190", name: "管理者", isAssistant: true },
+            { id: "A001", name: "陳個管", isAssistant: true },
+            { id: "A002", name: "林個管", isAssistant: false }
         ];
 
         const PRELOAD_HOLIDAYS = [
@@ -747,11 +753,11 @@
             const label = document.getElementById("loginIdLabel");
             const hint = document.getElementById("loginHint");
             if (role === "ADMIN") {
-                label.textContent = "管理者 / 輔助管理者職編";
-                hint.textContent = "請輸入管理者專用職務編號";
+                label.textContent = "管理者職編 或 輔助管理者職編";
+                hint.textContent = "預設管理者職編: 06190";
             } else {
                 label.textContent = "個管職務編號 (職編)";
-                hint.textContent = "請輸入授權之職務編號以進行身分驗證";
+                hint.textContent = "請輸入您的個管職編登入 (例如: A001)";
             }
         }
 
@@ -760,7 +766,7 @@
             const role = document.getElementById("loginRole").value;
             const inputVal = document.getElementById("loginIdInput").value.trim().toUpperCase();
 
-            if (!inputVal) return showToast("請輸入職務編號", "error");
+            if (!inputVal) return showToast("請輸入職編登入", "error");
 
             if (role === "ADMIN") {
                 if (inputVal === "06190") {
@@ -774,25 +780,21 @@
                     }
                 }
             } else {
-                if (inputVal === "06190") {
-                    currentUser = { id: "06190", name: "系統管理者", role: "ADMIN", isAssistant: true };
+                const u = usersData.find(x => x.id.toUpperCase() === inputVal);
+                if (u) {
+                    currentUser = { id: u.id, name: u.name, role: "CASE_MANAGER", isAssistant: !!u.isAssistant };
                 } else {
-                    const u = usersData.find(x => x.id.toUpperCase() === inputVal);
-                    if (u) {
-                        currentUser = { id: u.id, name: u.name, role: "CASE_MANAGER", isAssistant: !!u.isAssistant };
-                    } else {
-                        currentUser = { id: inputVal, name: `個管師 ${inputVal}`, role: "CASE_MANAGER", isAssistant: false };
-                        usersData.push({ id: inputVal, name: `個管師 ${inputVal}`, isAssistant: false });
-                        saveAllToStorage();
-                        renderUsersTable();
-                    }
+                    currentUser = { id: inputVal, name: `個管師 ${inputVal}`, role: "CASE_MANAGER", isAssistant: false };
+                    usersData.push({ id: inputVal, name: `個管師 ${inputVal}`, isAssistant: false });
+                    saveAllToStorage();
+                    renderUsersTable();
                 }
             }
 
             document.getElementById("loginModal").classList.add("hidden");
             document.getElementById("headerUserName").textContent = currentUser.name;
             document.getElementById("headerUserId").textContent = `(${currentUser.id})`;
-            document.getElementById("headerRoleBadge").textContent = (currentUser.role === "ADMIN" || currentUser.isAssistant) ? "管理者" : "A個管";
+            document.getElementById("headerRoleBadge").textContent = currentUser.role === "ADMIN" ? "管理者" : "A個管";
             
             showToast(`歡迎登入！${currentUser.name}`, "success");
             updateFairRecommendUnit();
@@ -864,13 +866,11 @@
                 if (u.endDate && u.endDate < today) return false;
                 return u.districts.includes(district) && u.services.includes(service);
             }).sort((a, b) => {
-                // Count accepted dispatches in both fair & other lists for this service
                 const countA = countUnitDispatches(a.name, service);
                 const countB = countUnitDispatches(b.name, service);
 
                 if (countA !== countB) return countA - countB; // Lowest count first
 
-                // Last dispatch time check (oldest first)
                 const lastA = getLastDispatchTime(a.name, service);
                 const lastB = getLastDispatchTime(b.name, service);
 
@@ -938,7 +938,7 @@
                 caseName: caseName,
                 caseId: caseId,
                 unitName: assignedUnit.name,
-                status: "PENDING", // PENDING = 尚未回覆
+                status: "PENDING",
                 unacceptedReason: "",
                 passDate: "",
                 referralDate: "",
@@ -967,7 +967,7 @@
                 return;
             }
 
-            fairRecordsData.forEach((r, idx) => {
+            fairRecordsData.forEach((r) => {
                 const tr = document.createElement("tr");
                 const isUnreplied = (r.status === "PENDING" || !r.status);
                 if (isUnreplied) tr.classList.add("unreplied-row");
@@ -1043,7 +1043,6 @@
             const oldRec = fairRecordsData.find(x => x.id === oldRecordId);
             if (!oldRec) return;
 
-            // Find candidates excluding already rejected units for this case
             const rejectedUnits = fairRecordsData.filter(x => x.caseId === oldRec.caseId && x.service === oldRec.service).map(x => x.unitName);
             const eligible = getFairEligibleUnits(oldRec.district, oldRec.service).filter(u => !rejectedUnits.includes(u.name));
 
@@ -1215,12 +1214,12 @@
 
             let count = 0;
             let cur = new Date(start);
-            cur.setDate(cur.getDate() + 1); // Start counting from next day
+            cur.setDate(cur.getDate() + 1);
 
             const holidaySet = new Set(holidaysData.map(h => h.date));
 
             while (cur <= end) {
-                const dayOfWeek = cur.getDay(); // 0 is Sun, 6 is Sat
+                const dayOfWeek = cur.getDay();
                 const dateStr = cur.toISOString().split("T")[0];
                 if (dayOfWeek !== 0 && dayOfWeek !== 6 && !holidaySet.has(dateStr)) {
                     count++;
@@ -1236,7 +1235,6 @@
 
             const monthVal = document.getElementById("kpiMonthFilter").value;
 
-            // Combine successful dispatches from both Fair and Other
             let successRecords = [
                 ...fairRecordsData.map(r => ({ ...r, origin: 'fair' })),
                 ...otherRecordsData.map(r => ({ ...r, origin: 'other' }))
@@ -1474,7 +1472,6 @@
             document.getElementById("unitModalTitle").textContent = "新增 B 服務單位";
             document.getElementById("unitForm").reset();
 
-            // Populate Checkboxes
             const dContainer = document.getElementById("unitFormDistrictsCheckboxes");
             dContainer.innerHTML = DISTRICTS.map(d => `<label><input type="checkbox" name="unitDistricts" value="${d}"> ${d}</label>`).join('');
 
@@ -1584,7 +1581,7 @@
             }
         }
 
-        // --- EXCELL REPORT EXPORTS (SheetJS Real File Output) ---
+        // --- EXPORT EXCEL REPORTS (SheetJS) ---
         function exportExcelRaw() {
             const allRecords = [...fairRecordsData, ...otherRecordsData];
             const ws = XLSX.utils.json_to_sheet(allRecords);
