@@ -51,7 +51,7 @@
                         <i class="fa-solid fa-user-shield text-3xl"></i>
                     </div>
                     <h2 class="text-2xl font-bold text-gray-800">屏東長照 A 單位派案系統</h2>
-                    <p class="text-xs text-gray-500">因應個資法防護，請先輸入職務編號進行身份驗證</p>
+                    <p class="text-xs text-gray-500">請輸入職務編號進行身份驗證</p>
                 </div>
 
                 <form onsubmit="handleLogin(event)" class="space-y-4">
@@ -64,7 +64,7 @@
 
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">管理者職編 或 輔助管理者職編</label>
-                        <input type="text" id="staffIdInput" required placeholder="請輸入您的職編 (例如: 06190 或 A001)" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-teal-500 focus:border-teal-500 text-sm">
+                        <input type="text" id="staffIdInput" required placeholder="請輸入職務編號" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-teal-500 focus:border-teal-500 text-sm">
                     </div>
 
                     <button type="submit" class="w-full bg-teal-600 hover:bg-teal-700 text-white font-medium py-2.5 rounded-lg shadow hover:shadow-lg transition flex items-center justify-center space-x-2">
@@ -85,6 +85,10 @@
                 <button onclick="switchTab('tab-other')" id="btn-tab-other" class="px-4 py-2 rounded-md font-medium text-sm transition flex items-center space-x-1.5 text-gray-600 hover:bg-gray-100">
                     <i class="fa-solid fa-list-check"></i>
                     <span>其他派案</span>
+                </button>
+                <button onclick="switchTab('tab-match')" id="btn-tab-match" class="px-4 py-2 rounded-md font-medium text-sm transition flex items-center space-x-1.5 text-gray-600 hover:bg-gray-100">
+                    <i class="fa-solid fa-handshake"></i>
+                    <span>服務媒合</span>
                 </button>
                 <button onclick="switchTab('tab-stats')" id="btn-tab-stats" class="px-4 py-2 rounded-md font-medium text-sm transition flex items-center space-x-1.5 text-gray-600 hover:bg-gray-100">
                     <i class="fa-solid fa-chart-line"></i>
@@ -241,7 +245,7 @@
                             <option value="單位開發">單位開發</option>
                             <option value="改派">改派</option>
                             <option value="出備派案">出備派案</option>
-                            <option value="服務媒合">服務媒合</option>
+                            
                         </select>
                     </div>
                     <div>
@@ -275,10 +279,12 @@
                         </select>
                     </div>
                     <div class="col-span-1 md:col-span-2">
-                        <label class="block text-sm font-medium text-gray-700 mb-1">指定服務單位全銜 (可搜尋/選取)</label>
-                        <select id="otherUnitSelect" required class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-cyan-500 focus:border-cyan-500">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">指定服務單位全銜</label>
+                        <input type="text" id="otherUnitInput" list="otherUnitDatalist" required placeholder="請輸入或搜尋服務單位全銜" class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-cyan-500 focus:border-cyan-500">
+                        <datalist id="otherUnitDatalist">
                             <!-- JS Dynamically populated -->
-                        </select>
+                        </datalist>
+                        <p class="text-xs text-amber-600 mt-1"><i class="fa-solid fa-circle-info mr-1"></i>提示：請務必輸入完整服務單位全銜（可手動新增輸入或搜尋關鍵字）</p>
                     </div>
                     <div class="col-span-1 md:col-span-4">
                         <button type="submit" class="w-full bg-cyan-600 hover:bg-cyan-700 text-white font-medium py-2 rounded-md shadow transition flex items-center justify-center space-x-1">
@@ -322,7 +328,105 @@
             </div>
         </div>
 
-        <!-- TAB 3: 時效與成功統計 -->
+        
+        <!-- TAB 2.5: 服務媒合 (獨立分頁) -->
+        <div id="tab-match" class="tab-content hidden space-y-6">
+            <div class="bg-white rounded-xl shadow p-6 border-l-4 border-indigo-600">
+                <h2 class="text-lg font-bold text-gray-800 mb-4 flex items-center">
+                    <i class="fa-solid fa-handshake text-indigo-600 mr-2"></i>手動新增服務媒合派案
+                </h2>
+                <form onsubmit="handleAddMatchDispatch(event)" class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">A 個管</label>
+                        <input type="text" id="matchCaseManager" readonly class="w-full px-3 py-2 bg-gray-100 border border-gray-300 rounded-md text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">個案姓名</label>
+                        <input type="text" id="matchCaseName" required placeholder="例如: 陳大明" class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">個案 ID</label>
+                        <input type="text" id="matchCaseId" required placeholder="例如: B123456789" class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">服務區域</label>
+                        <select id="matchDistrict" required class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm">
+                            <option value="">-- 請選擇鄉鎮 --</option>
+                            <option value="屏東市">屏東市</option><option value="萬丹鄉">萬丹鄉</option><option value="長治鄉">長治鄉</option>
+                            <option value="麟洛鄉">麟洛鄉</option><option value="九如鄉">九如鄉</option><option value="里港鄉">里港鄉</option>
+                            <option value="鹽埔鄉">鹽埔鄉</option><option value="高樹鄉">高樹鄉</option><option value="萬巒鄉">萬巒鄉</option>
+                            <option value="竹田鄉">竹田鄉</option><option value="潮州鎮">潮州鎮</option><option value="內埔鄉">內埔鄉</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">服務類型 (下拉選單/可自填)</label>
+                        <select id="matchServiceSelect" onchange="toggleMatchCustomService()" required class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm">
+                            <option value="">-- 請選擇服務類型 --</option>
+                            <option value="脆弱家庭">脆弱家庭</option><option value="成人保護">成人保護</option><option value="兒少保護">兒少保護</option>
+                            <option value="自殺防治">自殺防治</option><option value="優化計畫">優化計畫</option><option value="緊急救援">緊急救援</option>
+                            <option value="防走失資源">防走失資源</option><option value="居家醫療">居家醫療</option><option value="居家護理">居家護理</option>
+                            <option value="居家安寧">居家安寧</option><option value="貼心到宅整合">貼心到宅整合</option><option value="其他醫療">其他醫療</option>
+                            <option value="列冊獨老">列冊獨老</option><option value="關懷服務">關懷服務</option><option value="身障個管">身障個管</option>
+                            <option value="心衛中心">心衛中心</option><option value="長期救濟">長期救濟</option><option value="急難救助">急難救助</option>
+                            <option value="物資">物資</option><option value="經濟">經濟</option><option value="輔具">輔具</option>
+                            <option value="無障礙環境">無障礙環境</option><option value="環境整理">環境整理</option><option value="電器修繕">電器修繕</option>
+                            <option value="喪葬補助">喪葬補助</option><option value="就醫協助">就醫協助</option><option value="就業輔助">就業輔助</option>
+                            <option value="生活重建">生活重建</option><option value="原床泡澡">原床泡澡</option><option value="非長照復能">非長照復能</option>
+                            <option value="身障資源">身障資源</option><option value="其他(自填)">其他(自訂自行填寫)</option>
+                        </select>
+                    </div>
+                    <div id="matchCustomServiceBox" class="hidden">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">自行填寫服務類型</label>
+                        <input type="text" id="matchCustomServiceInput" placeholder="請輸入自行填寫服務類型" class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm">
+                    </div>
+                    <div class="col-span-1 md:col-span-2">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">指定服務單位全銜</label>
+                        <input type="text" id="matchUnitInput" list="otherUnitDatalist" required placeholder="請輸入或搜尋服務單位全銜" class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-indigo-500 focus:border-indigo-500">
+                        <p class="text-xs text-amber-600 mt-1"><i class="fa-solid fa-circle-info mr-1"></i>提示：請務必輸入完整服務單位全銜（可手動新增輸入或搜尋關鍵字）</p>
+                    </div>
+                    <div class="col-span-1 md:col-span-4">
+                        <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 rounded-md shadow transition flex items-center justify-center space-x-1">
+                            <i class="fa-solid fa-plus-circle"></i>
+                            <span>建立服務媒合派案</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- 服務媒合派案表格 -->
+            <div class="bg-white rounded-xl shadow overflow-hidden">
+                <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center bg-gray-50">
+                    <h3 class="font-bold text-gray-800 flex items-center">
+                        <i class="fa-solid fa-table-list mr-2 text-indigo-600"></i>服務媒合派案清冊
+                    </h3>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm text-left text-gray-700">
+                        <thead class="text-xs text-gray-700 uppercase bg-gray-100 border-b">
+                            <tr>
+                                <th class="px-3 py-3">A 個管</th>
+                                <th class="px-3 py-3">派案日期</th>
+                                <th class="px-3 py-3">個案姓名</th>
+                                <th class="px-3 py-3">個案 ID</th>
+                                <th class="px-3 py-3">服務區域</th>
+                                <th class="px-3 py-3">服務類型</th>
+                                <th class="px-3 py-3">服務單位全銜</th>
+                                <th class="px-3 py-3">完成轉介單影本</th>
+                                <th class="px-3 py-3">對方是否親回</th>
+                                <th class="px-3 py-3">是否收案</th>
+                                <th class="px-3 py-3">未收案原因簡述</th>
+                                <th class="px-3 py-3">操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="matchTableBody">
+                            <!-- JS Dynamically rendered -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+<!-- TAB 3: 時效與成功統計 -->
         <div id="tab-stats" class="tab-content hidden space-y-6">
             <!-- 月度 KPI 統計卡片 -->
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -782,6 +886,7 @@
 
             document.getElementById('addCaseManager').value = `${state.currentUser.name} (${state.currentUser.id})`;
             document.getElementById('otherCaseManager').value = `${state.currentUser.name} (${state.currentUser.id})`;
+            if (document.getElementById('matchCaseManager')) document.getElementById('matchCaseManager').value = `${state.currentUser.name} (${state.currentUser.id})`;
 
             switchTab('tab-dispatch');
         }
@@ -799,7 +904,7 @@
             document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
             document.getElementById(tabId).classList.remove('hidden');
 
-            const btnIds = ['btn-tab-dispatch', 'btn-tab-other', 'btn-tab-stats', 'adminTabBtn'];
+            const btnIds = ['btn-tab-dispatch', 'btn-tab-other', 'btn-tab-match', 'btn-tab-stats', 'adminTabBtn'];
             btnIds.forEach(id => {
                 const btn = document.getElementById(id);
                 if (btn) {
@@ -808,7 +913,7 @@
                 }
             });
 
-            const activeBtn = document.getElementById(tabId === 'tab-dispatch' ? 'btn-tab-dispatch' : (tabId === 'tab-other' ? 'btn-tab-other' : (tabId === 'tab-stats' ? 'btn-tab-stats' : 'adminTabBtn')));
+            const activeBtn = document.getElementById(tabId === 'tab-dispatch' ? 'btn-tab-dispatch' : (tabId === 'tab-other' ? 'btn-tab-other' : (tabId === 'tab-match' ? 'btn-tab-match' : (tabId === 'tab-stats' ? 'btn-tab-stats' : 'adminTabBtn'))));
             if (activeBtn) {
                 activeBtn.classList.remove('text-gray-600', 'hover:bg-gray-100');
                 activeBtn.classList.add('bg-teal-600', 'text-white', 'shadow');
@@ -816,6 +921,7 @@
 
             if (tabId === 'tab-dispatch') renderDispatchTable();
             if (tabId === 'tab-other') { updateOtherUnitOptions(); renderOtherTable(); }
+            if (tabId === 'tab-match') { updateOtherUnitOptions(); renderMatchTable(); }
             if (tabId === 'tab-stats') renderStatsTable();
             if (tabId === 'tab-admin') { switchAdminSubTab('admin-holidays'); }
         }
@@ -980,18 +1086,20 @@
         function updateOtherUnitOptions() {
             const district = document.getElementById('otherDistrict').value;
             const service = document.getElementById('otherService').value;
-            const select = document.getElementById('otherUnitSelect');
-            select.innerHTML = '<option value="">-- 請選擇或搜尋服務單位 --</option>';
+            const datalist = document.getElementById('otherUnitDatalist');
+            if (!datalist) return;
+            datalist.innerHTML = '';
 
             let filtered = state.units.filter(u => u.status === 'active');
             if (district) filtered = filtered.filter(u => u.districts.includes(district));
             if (service) filtered = filtered.filter(u => u.services.includes(service));
 
-            filtered.forEach(u => {
+            // 去重並產生 datalist 選項，不顯示電話號碼
+            const uniqueNames = [...new Set(filtered.map(u => u.name))];
+            uniqueNames.forEach(name => {
                 const opt = document.createElement('option');
-                opt.value = u.name; // 使用服務單位全銜
-                opt.innerText = `${u.name} (${u.phone || '無電話'})`;
-                select.appendChild(opt);
+                opt.value = name;
+                datalist.appendChild(opt);
             });
         }
 
@@ -1006,7 +1114,7 @@
             const caseId = document.getElementById('otherCaseId').value.trim();
             const district = document.getElementById('otherDistrict').value;
             const service = document.getElementById('otherService').value;
-            const unitName = document.getElementById('otherUnitSelect').value;
+            const unitName = document.getElementById('otherUnitInput').value.trim();
 
             if (!district || !service || !unitName) {
                 alert('請完整填寫服務區域、服務類型與指定單位！');
@@ -1038,6 +1146,7 @@
 
             document.getElementById('otherCaseName').value = '';
             document.getElementById('otherCaseId').value = '';
+            document.getElementById('otherUnitInput').value = '';
             renderOtherTable();
             alert(`已成功新增 [${type}] 派案紀錄！`);
         }
@@ -1178,6 +1287,125 @@
                 renderOtherTable();
             }
         }
+
+        
+        function toggleMatchCustomService() {
+            const selectVal = document.getElementById('matchServiceSelect').value;
+            const customBox = document.getElementById('matchCustomServiceBox');
+            if (selectVal === '其他(自填)') {
+                customBox.classList.remove('hidden');
+            } else {
+                customBox.classList.add('hidden');
+            }
+        }
+
+        function handleAddMatchDispatch(e) {
+            e.preventDefault();
+            const caseName = document.getElementById('matchCaseName').value.trim();
+            const caseId = document.getElementById('matchCaseId').value.trim();
+            const district = document.getElementById('matchDistrict').value;
+            let service = document.getElementById('matchServiceSelect').value;
+            if (service === '其他(自填)') {
+                service = document.getElementById('matchCustomServiceInput').value.trim() || '其他自訂服務';
+            }
+            const unitName = document.getElementById('matchUnitInput').value.trim();
+
+            if (!district || !service || !unitName) {
+                alert('請完整填寫服務區域、服務類型與指定單位！');
+                return;
+            }
+
+            const newRecord = {
+                id: 'DISP-' + Date.now(),
+                category: '服務媒合',
+                cmName: `${state.currentUser.name} (${state.currentUser.id})`,
+                date: new Date().toISOString().split('T')[0],
+                caseName,
+                caseId,
+                district,
+                service,
+                unitName,
+                referralCopyStatus: '未完成', // 完成 / 未完成
+                isSelfReply: '否', // 是 / 否
+                status: 'pending', // accepted: 可提供服務, rejected: 未收案, pending: 待回覆
+                rejectReasonSummary: '' // 未收案原因簡述
+            };
+
+            state.dispatches.unshift(newRecord);
+            saveLocalStorage();
+
+            document.getElementById('matchCaseName').value = '';
+            document.getElementById('matchCaseId').value = '';
+            document.getElementById('matchUnitInput').value = '';
+            if (document.getElementById('matchCustomServiceInput')) {
+                document.getElementById('matchCustomServiceInput').value = '';
+            }
+            renderMatchTable();
+            alert('已成功新增服務媒合派案紀錄！');
+        }
+
+        function renderMatchTable() {
+            const tbody = document.getElementById('matchTableBody');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+
+            const list = state.dispatches.filter(d => d.category === '服務媒合');
+            if (list.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="12" class="text-center py-6 text-gray-400">目前尚無服務媒合派案紀錄</td></tr>`;
+                return;
+            }
+
+            list.forEach(item => {
+                const tr = document.createElement('tr');
+                tr.className = `border-b transition hover:bg-gray-50 ${item.status === 'pending' ? 'bg-pending' : ''}`;
+
+                tr.innerHTML = `
+                    <td class="px-3 py-3 font-medium text-gray-900">${item.cmName}</td>
+                    <td class="px-3 py-3 text-xs text-gray-500">${item.date}</td>
+                    <td class="px-3 py-3 font-semibold text-gray-800">${item.caseName}</td>
+                    <td class="px-3 py-3 text-xs">${item.caseId}</td>
+                    <td class="px-3 py-3"><span class="bg-gray-100 text-gray-700 px-2 py-0.5 rounded text-xs">${item.district}</span></td>
+                    <td class="px-3 py-3"><span class="bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded text-xs">${item.service}</span></td>
+                    <td class="px-3 py-3 font-medium text-gray-900">${item.unitName}</td>
+                    <td class="px-3 py-3">
+                        <select onchange="updateMatchField('${item.id}', 'referralCopyStatus', this.value)" class="text-xs px-2 py-1 border border-gray-300 rounded focus:ring-indigo-500">
+                            <option value="完成" ${item.referralCopyStatus === '完成' ? 'selected' : ''}>完成</option>
+                            <option value="未完成" ${(!item.referralCopyStatus || item.referralCopyStatus === '未完成') ? 'selected' : ''}>未完成</option>
+                        </select>
+                    </td>
+                    <td class="px-3 py-3">
+                        <select onchange="updateMatchField('${item.id}', 'isSelfReply', this.value)" class="text-xs px-2 py-1 border border-gray-300 rounded focus:ring-indigo-500">
+                            <option value="是" ${item.isSelfReply === '是' ? 'selected' : ''}>是</option>
+                            <option value="否" ${(!item.isSelfReply || item.isSelfReply === '否') ? 'selected' : ''}>否</option>
+                        </select>
+                    </td>
+                    <td class="px-3 py-3">
+                        <select onchange="updateMatchField('${item.id}', 'status', this.value)" class="text-xs px-2 py-1 border border-gray-300 rounded focus:ring-indigo-500">
+                            <option value="accepted" ${item.status === 'accepted' ? 'selected' : ''}>可提供服務</option>
+                            <option value="rejected" ${item.status === 'rejected' ? 'selected' : ''}>未收案</option>
+                            <option value="pending" ${item.status === 'pending' ? 'selected' : ''}>待回覆</option>
+                        </select>
+                    </td>
+                    <td class="px-3 py-3">
+                        <input type="text" value="${item.rejectReasonSummary || ''}" placeholder="未收案原因簡述..." onchange="updateMatchField('${item.id}', 'rejectReasonSummary', this.value)" class="text-xs px-2 py-1 border border-gray-300 rounded w-full">
+                    </td>
+                    <td class="px-3 py-3">
+                        <button onclick="deleteDispatchRecord('${item.id}')" class="text-xs text-rose-600 hover:text-rose-800 underline">刪除</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function updateMatchField(id, field, value) {
+            const item = state.dispatches.find(d => d.id === id);
+            if (item) {
+                item[field] = value;
+                saveLocalStorage();
+                renderMatchTable();
+            }
+        }
+
 
         // TAB 3: 時效統計與工作天計算邏輯
         function isWeekendOrHoliday(dateObj) {
