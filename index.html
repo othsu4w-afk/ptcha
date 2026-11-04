@@ -3,100 +3,155 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>115年屏東縣長照B單位公平輪派與管理系統</title>
-    <!-- 引入 Bootstrap 5 與 Select2 搜尋庫 -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <title>屏東縣長照A單位 B單位公平輪派與管理系統 (115年版)</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- SheetJS for Excel Export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
-        body { background-color: #f4f6f9; font-family: "Microsoft JhengHei", sans-serif; }
-        .card-custom { border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); border: none; }
-        .btn-custom { background-color: #008080; color: white; }
-        .btn-custom:hover { background-color: #006666; color: white; }
-        .hint-text { color: #d9534f; font-size: 0.875rem; margin-top: 4px; font-weight: bold; }
-        .select2-container .select2-selection--single { height: 38px; border: 1px solid #ced4da; }
-        .select2-container--default .select2-selection--single .select2-selection__rendered { line-height: 36px; }
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&display=swap');
+        body { font-family: 'Noto Sans TC', sans-serif; background-color: #f3f4f6; }
+        .bg-pending { background-color: #d1fae5 !important; }
+        .text-overtime { color: #dc2626 !important; font-weight: bold; }
     </style>
 </head>
-<body>
+<body class="min-h-screen flex flex-col">
 
-<div class="container my-4">
-    <!-- 頂部標題區 -->
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <h4 class="fw-bold text-success">➕ 115年屏東長照B單位公平輪派與管理系統</h4>
-        <div>
-            <!-- 5. 登入提示與按鈕簡化為「職編」 -->
-            <span class="me-2 text-muted">A個管：系統管理者 (<span id="userStaffId">06190</span>)</span>
-            <button class="btn btn-outline-danger btn-sm" onclick="logout()">登出</button>
+    <!-- Header -->
+    <header class="bg-teal-800 text-white shadow-md">
+        <div class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
+            <div class="flex items-center space-x-3">
+                <i class="fa-solid fa-hand-holding-medical text-2xl text-teal-300"></i>
+                <div>
+                    <h1 class="text-xl font-bold tracking-wide">115年屏東長照B單位公平輪派與管理系統</h1>
+                    <p class="text-xs text-teal-200">轄區 12 鄉鎮 17 類型服務單位派案與時效稽核（全數 299 家合作單位）</p>
+                </div>
+            </div>
+            <div id="userInfoHeader" class="hidden flex items-center space-x-4">
+                <span class="bg-teal-700 px-3 py-1 rounded-full text-sm border border-teal-500">
+                    <i class="fa-solid fa-user-check mr-1"></i> <span id="currentUserLabel"></span>
+                </span>
+                <button onclick="logout()" class="bg-rose-600 hover:bg-rose-700 text-white text-xs px-3 py-1.5 rounded transition shadow">
+                    <i class="fa-solid fa-right-from-bracket mr-1"></i> 登出
+                </button>
+            </div>
         </div>
-    </div>
+    </header>
 
-    <!-- 頁籤與主區塊 -->
-    <div class="card card-custom p-4">
-        <ul class="nav nav-tabs mb-3">
-            <li class="nav-item">
-                <a class="nav-link" href="#">⚖️ 一般輪派</a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link active fw-bold" href="#">📑 其他派案</a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" href="#">📊 派案成功與時效檢核</a>
-            </li>
-        </ul>
+    <!-- Main Container -->
+    <main class="flex-grow max-w-7xl w-full mx-auto px-4 py-6">
 
-        <h5 class="fw-bold text-primary mb-3">📝 手動新增其他類型派案</h5>
-
-        <form id="dispatchForm">
-            <div class="row g-3">
-                <div class="col-md-6">
-                    <label class="form-label font-weight-bold">A個管</label>
-                    <!-- 5. 顯示與登入皆統一標示職編 -->
-                    <input type="text" class="form-control" value="系統管理者 (職編: 06190)" readonly disabled>
-                </div>
-                
-                <div class="col-md-6">
-                    <label class="form-label font-weight-bold">派案類型</label>
-                    <select class="form-select">
-                        <option value="家屬指定">家屬指定</option>
-                        <option value="特殊需求">特殊需求</option>
-                    </select>
-                </div>
-
-                <!-- 1, 2, 3, 4 需求綜合區域：搜尋單位選單 / 無電話 / 支援手動新增與全銜提示 -->
-                <div class="col-md-12">
-                    <label for="unitSelect" class="form-label font-weight-bold">服務單位全銜</label>
-                    <!-- 1. 可搜尋的下拉選單 -->
-                    <select id="unitSelect" class="form-select select2-search" style="width: 100%;">
-                        <option value="">-- 請選擇或搜尋服務單位 --</option>
-                        <option value="custom">+ 手動新增其他服務單位...</option>
-                    </select>
-
-                    <!-- 3 & 4. 手動新增名稱與全銜提示 -->
-                    <div id="customUnitWrapper" class="mt-2" style="display: none;">
-                        <input type="text" id="customUnitName" class="form-control" 
-                               placeholder="請輸入服務單位全銜（例：○○股份有限公司附設屏東縣私立○○居家長照機構）">
-                        <div class="hint-text">⚠️ 提示：請務必輸入「完整機構全銜」，避免影響後續申報與核對作業。</div>
+        <!-- Login Section (Modal/View) -->
+        <div id="loginView" class="fixed inset-0 bg-slate-900 bg-opacity-75 flex items-center justify-center z-50 p-4">
+            <div class="bg-white rounded-xl shadow-2xl max-w-md w-full p-6 space-y-6">
+                <div class="text-center space-y-2">
+                    <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-teal-100 text-teal-700 mb-2">
+                        <i class="fa-solid fa-user-shield text-3xl"></i>
                     </div>
+                    <h2 class="text-2xl font-bold text-gray-800">屏東長照 A 單位派案系統</h2>
+                    <p class="text-xs text-gray-500">因應個資法防護，請先輸入職務編號進行身份驗證</p>
                 </div>
+
+                <form onsubmit="handleLogin(event)" class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">登入身分與職務編號</label>
+                        <select id="loginRoleSelect" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-teal-500 focus:border-teal-500 text-sm">
+                            <option value="manager">個管員 / 輔助管理者 (請輸入職編)</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">請輸入您的職編</label>
+                        <input type="text" id="staffIdInput" required placeholder="請輸入職編" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-teal-500 focus:border-teal-500 text-sm">
+                    </div>
+
+                    <button type="submit" class="w-full bg-teal-600 hover:bg-teal-700 text-white font-medium py-2.5 rounded-lg shadow hover:shadow-lg transition flex items-center justify-center space-x-2">
+                        <i class="fa-solid fa-right-to-bracket"></i>
+                        <span>安全登入系統</span>
+                    </button>
+                </form>
             </div>
+        </div>
 
-            <div class="mt-4 text-end">
-                <button type="button" class="btn btn-custom px-4" onclick="submitDispatch()">確認派案</button>
+        <!-- Navigation Tabs -->
+        <div id="appTabs" class="hidden mb-6 bg-white rounded-lg shadow p-2 flex flex-wrap gap-2 justify-between items-center">
+            <div class="flex flex-wrap gap-2">
+                <button onclick="switchTab('tab-dispatch')" id="btn-tab-dispatch" class="px-4 py-2 rounded-md font-medium text-sm transition flex items-center space-x-1.5 bg-teal-600 text-white shadow">
+                    <i class="fa-solid fa-rotate"></i>
+                    <span>一般輪派</span>
+                </button>
+                <button onclick="switchTab('tab-other')" id="btn-tab-other" class="px-4 py-2 rounded-md font-medium text-sm transition flex items-center space-x-1.5 text-gray-600 hover:bg-gray-100">
+                    <i class="fa-solid fa-list-check"></i>
+                    <span>其他派案</span>
+                </button>
+                <button onclick="switchTab('tab-stats')" id="btn-tab-stats" class="px-4 py-2 rounded-md font-medium text-sm transition flex items-center space-x-1.5 text-gray-600 hover:bg-gray-100">
+                    <i class="fa-solid fa-chart-line"></i>
+                    <span>派案成功與時效統計</span>
+                </button>
+                <button id="adminTabBtn" onclick="switchTab('tab-admin')" class="px-4 py-2 rounded-md font-medium text-sm transition flex items-center space-x-1.5 text-gray-600 hover:bg-gray-100">
+                    <i class="fa-solid fa-sliders"></i>
+                    <span>系統設定與權限管理</span>
+                </button>
             </div>
-        </form>
-    </div>
-</div>
+            <div>
+                <button onclick="resetSystemData()" class="text-xs text-gray-500 hover:text-rose-600 px-2 py-1 rounded border border-gray-200">
+                    <i class="fa-solid fa-arrows-rotate mr-1"></i>重置測試數據
+                </button>
+            </div>
+        </div>
 
-<!-- 依賴套件 (jQuery & Select2 實現即時搜尋功能) -->
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+        <!-- TAB 1: 一般輪派 -->
+        <div id="tab-dispatch" class="tab-content hidden space-y-6">
+            <div class="bg-white rounded-xl shadow p-6 border-l-4 border-teal-600">
+                <h2 class="text-lg font-bold text-gray-800 mb-4 flex items-center">
+                    <i class="fa-solid fa-filter text-teal-600 mr-2"></i>第一與第二層分類篩選
+                </h2>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">第一層：服務區域 (12 鄉鎮)</label>
+                        <select id="dispatchDistrict" onchange="updateDispatchUnitOptions()" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-teal-500 focus:border-teal-500 text-sm">
+                            <option value="">-- 請選擇鄉鎮區域 --</option>
+                            <option value="屏東市">屏東市</option>
+                            <option value="萬丹鄉">萬丹鄉</option>
+                            <option value="長治鄉">長治鄉</option>
+                            <option value="麟洛鄉">麟洛鄉</option>
+                            <option value="九如鄉">九如鄉</option>
+                            <option value="里港鄉">里港鄉</option>
+                            <option value="鹽埔鄉">鹽埔鄉</option>
+                            <option value="高樹鄉">高樹鄉</option>
+                            <option value="萬巒鄉">萬巒鄉</option>
+                            <option value="竹田鄉">竹田鄉</option>
+                            <option value="潮州鎮">潮州鎮</option>
+                            <option value="內埔鄉">內埔鄉</option>
+                        </select>
+                    </div>
 
-<script>
-    // 原始單位名冊範例數據（帶有電話號碼）
-    const rawUnitList = [
-        "九如失智社區服務據點 (08-7391969)",
-        "凡恩國際有限公司附設屏東縣私立凡恩居家長照機構 (08-7513800)",
-        "大地居家護理所 (08-7960036)",
-        "大地春企業有限公司附設屏東縣私立田子社區長照機構 (08-7967703)",
-        "大愛護理之家 (0
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">第二層：服務類型 (17 類別)</label>
+                        <select id="dispatchService" onchange="updateDispatchUnitOptions()" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-teal-500 focus:border-teal-500 text-sm">
+                            <option value="">-- 請選擇服務類型 --</option>
+                            <option value="居家服務">居家服務</option>
+                            <option value="到宅沐浴">到宅沐浴</option>
+                            <option value="日間照顧">日間照顧</option>
+                            <option value="家庭托顧">家庭托顧</option>
+                            <option value="專業服務">專業服務</option>
+                            <option value="居家喘息">居家喘息</option>
+                            <option value="日照喘息">日照喘息</option>
+                            <option value="機構喘息">機構喘息</option>
+                            <option value="小規機喘息">小規機喘息</option>
+                            <option value="巷弄喘息">巷弄喘息</option>
+                            <option value="餐飲服務">餐飲服務</option>
+                            <option value="失智共照">失智共照</option>
+                            <option value="失智據點">失智據點</option>
+                            <option value="家照者支持">家照者支持</option>
+                            <option value="團體家屋">團體家屋</option>
+                            <option value="交通接送">交通接送</option>
+                            <option value="BD03">BD03</option>
+                        </select>
+                    </div>
+
+                    <div class="flex items-end">
+                        <div class="bg-amber-50 border border-amber-200 rounded-md p-2 text-xs text-amber-800 w-full">
+                            <i class="fa-solid
