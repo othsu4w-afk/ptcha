@@ -3,418 +3,280 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>屏東縣長照A單位 B單位公平輪派與管理系統 (115年版)</title>
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- FontAwesome Icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- SheetJS for Excel Export -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <title>派案管理系統</title>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&display=swap');
-        body { font-family: 'Noto Sans TC', sans-serif; background-color: #f3f4f6; }
-        .bg-pending { background-color: #d1fae5 !important; }
-        .text-overtime { color: #dc2626 !important; font-weight: bold; }
+        :root {
+            --primary-color: #2c3e50;
+            --secondary-color: #3498db;
+            --accent-color: #e74c3c;
+            --bg-color: #f4f6f7;
+            --card-bg: #ffffff;
+            --text-color: #333333;
+            --border-color: #cccccc;
+        }
+
+        body {
+            font-family: "Microsoft JhengHei", "PingFang TC", sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 800px;
+            background-color: var(--card-bg);
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            margin: 20px;
+        }
+
+        .header {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 20px;
+            text-align: center;
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        .login-box, .app-content {
+            padding: 30px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+            position: relative;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #555;
+        }
+
+        input[type="text"], select {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            box-sizing: border-box;
+            font-size: 16px;
+        }
+
+        input[type="text"]:focus, select:focus {
+            border-color: var(--secondary-color);
+            outline: none;
+            box-shadow: 0 0 5px rgba(52, 152, 219, 0.5);
+        }
+
+        .btn {
+            background-color: var(--secondary-color);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            font-size: 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            width: 100%;
+            transition: background-color 0.2s;
+        }
+
+        .btn:hover {
+            background-color: #2980b9;
+        }
+
+        .hint {
+            font-size: 13px;
+            color: #777;
+            margin-top: 5px;
+        }
+
+        .hint.warning {
+            color: var(--accent-color);
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .tab-buttons {
+            display: flex;
+            border-bottom: 2px solid var(--border-color);
+            margin-bottom: 20px;
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 12px;
+            background: none;
+            border: none;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            color: #666;
+            border-bottom: 3px solid transparent;
+        }
+
+        .tab-btn.active {
+            color: var(--secondary-color);
+            border-bottom-color: var(--secondary-color);
+        }
+
+        /* 關鍵字搜尋下拉選單與可輸入樣式 */
+        .combobox-container {
+            position: relative;
+        }
+
+        datalist {
+            position: absolute;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .user-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: #eef2f5;
+            padding: 10px 15px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+        }
     </style>
 </head>
-<body class="min-h-screen flex flex-col">
+<body>
 
-    <!-- Header -->
-    <header class="bg-teal-800 text-white shadow-md">
-        <div class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
-            <div class="flex items-center space-x-3">
-                <i class="fa-solid fa-hand-holding-medical text-2xl text-teal-300"></i>
-                <div>
-                    <h1 class="text-xl font-bold tracking-wide">115年屏東長照B單位公平輪派與管理系統</h1>
-                    <p class="text-xs text-teal-200">轄區 12 鄉鎮 17 類型服務單位派案與時效稽核（全數 299 家合作單位）</p>
-                </div>
+<div class="container">
+    <div class="header">派案管理系統</div>
+
+    <!-- 登入區域 -->
+    <div id="loginSection" class="login-box">
+        <form id="loginForm" onsubmit="handleLogin(event)">
+            <div class="form-group">
+                <label for="empId">職務編號</label>
+                <input type="text" id="empId" placeholder="請輸入職編" required autocomplete="off">
+                <div class="hint">請輸入職編</div>
             </div>
-            <div id="userInfoHeader" class="hidden flex items-center space-x-4">
-                <span class="bg-teal-700 px-3 py-1 rounded-full text-sm border border-teal-500">
-                    <i class="fa-solid fa-user-check mr-1"></i> <span id="currentUserLabel"></span>
-                </span>
-                <button onclick="logout()" class="bg-rose-600 hover:bg-rose-700 text-white text-xs px-3 py-1.5 rounded transition shadow">
-                    <i class="fa-solid fa-right-from-bracket mr-1"></i> 登出
-                </button>
-            </div>
-        </div>
-    </header>
+            <button type="submit" class="btn">登入</button>
+        </form>
+    </div>
 
-    <!-- Main Container -->
-    <main class="flex-grow max-w-7xl w-full mx-auto px-4 py-6">
-
-        <!-- Login Section (Modal/View) -->
-        <div id="loginView" class="fixed inset-0 bg-slate-900 bg-opacity-75 flex items-center justify-center z-50 p-4">
-            <div class="bg-white rounded-xl shadow-2xl max-w-md w-full p-6 space-y-6">
-                <div class="text-center space-y-2">
-                    <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-teal-100 text-teal-700 mb-2">
-                        <i class="fa-solid fa-user-shield text-3xl"></i>
-                    </div>
-                    <h2 class="text-2xl font-bold text-gray-800">屏東長照 A 單位派案系統</h2>
-                    <p class="text-xs text-gray-500">請輸入職務編號進行身份驗證</p>
-                </div>
-
-                <form onsubmit="handleLogin(event)" class="space-y-4">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">登入身分與職務編號</label>
-                        <select id="loginRoleSelect" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-teal-500 focus:border-teal-500 text-sm">
-                            <option value="manager">個管員 / 輔助管理者 (請輸入職編)</option>
-                        </select>
-                    </div>
-
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">管理者職編 或 輔助管理者職編</label>
-                        <input type="text" id="staffIdInput" required class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-teal-500 focus:border-teal-500 text-sm">
-                    </div>
-
-                    <button type="submit" class="w-full bg-teal-600 hover:bg-teal-700 text-white font-medium py-2.5 rounded-lg shadow hover:shadow-lg transition flex items-center justify-center space-x-2">
-                        <i class="fa-solid fa-right-to-bracket"></i>
-                        <span>安全登入系統</span>
-                    </button>
-                </form>
-            </div>
+    <!-- 主系統區域 -->
+    <div id="appSection" class="app-content hidden">
+        <div class="user-info">
+            <span>登入身分：<strong id="currentUser"></strong></span>
+            <button onclick="handleLogout()" style="background:none; border:none; color:var(--accent-color); cursor:pointer; text-decoration:underline;">登出</button>
         </div>
 
-        <!-- Navigation Tabs -->
-        <div id="appTabs" class="hidden mb-6 bg-white rounded-lg shadow p-2 flex flex-wrap gap-2 justify-between items-center">
-            <div class="flex flex-wrap gap-2">
-                <button onclick="switchTab('tab-dispatch')" id="btn-tab-dispatch" class="px-4 py-2 rounded-md font-medium text-sm transition flex items-center space-x-1.5 bg-teal-600 text-white shadow">
-                    <i class="fa-solid fa-rotate"></i>
-                    <span>一般輪派</span>
-                </button>
-                <button onclick="switchTab('tab-other')" id="btn-tab-other" class="px-4 py-2 rounded-md font-medium text-sm transition flex items-center space-x-1.5 text-gray-600 hover:bg-gray-100">
-                    <i class="fa-solid fa-list-check"></i>
-                    <span>其他派案</span>
-                </button>
-                <button onclick="switchTab('tab-stats')" id="btn-tab-stats" class="px-4 py-2 rounded-md font-medium text-sm transition flex items-center space-x-1.5 text-gray-600 hover:bg-gray-100">
-                    <i class="fa-solid fa-chart-line"></i>
-                    <span>派案成功與時效統計</span>
-                </button>
-                <button id="adminTabBtn" onclick="switchTab('tab-admin')" class="px-4 py-2 rounded-md font-medium text-sm transition flex items-center space-x-1.5 text-gray-600 hover:bg-gray-100">
-                    <i class="fa-solid fa-sliders"></i>
-                    <span>系統設定與權限管理</span>
-                </button>
-            </div>
-            <div>
-                <button onclick="resetSystemData()" class="text-xs text-gray-500 hover:text-rose-600 px-2 py-1 rounded border border-gray-200">
-                    <i class="fa-solid fa-arrows-rotate mr-1"></i>重置測試數據
-                </button>
-            </div>
+        <div class="tab-buttons">
+            <button class="tab-btn active" onclick="switchTab('regular')">一般派案</button>
+            <button class="tab-btn" onclick="switchTab('other')">其他派案</button>
         </div>
 
-        <!-- TAB 1: 一般輪派 -->
-        <div id="tab-dispatch" class="tab-content hidden space-y-6">
-            <div class="bg-white rounded-xl shadow p-6 border-l-4 border-teal-600">
-                <h2 class="text-lg font-bold text-gray-800 mb-4 flex items-center">
-                    <i class="fa-solid fa-filter text-teal-600 mr-2"></i>第一與第二層分類篩選
-                </h2>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">第一層：服務區域 (12 鄉鎮)</label>
-                        <select id="dispatchDistrict" onchange="updateDispatchUnitOptions()" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-teal-500 focus:border-teal-500 text-sm">
-                            <option value="">-- 請選擇鄉鎮區域 --</option>
-                            <option value="屏東市">屏東市</option>
-                            <option value="萬丹鄉">萬丹鄉</option>
-                            <option value="長治鄉">長治鄉</option>
-                            <option value="麟洛鄉">麟洛鄉</option>
-                            <option value="九如鄉">九如鄉</option>
-                            <option value="里港鄉">里港鄉</option>
-                            <option value="鹽埔鄉">鹽埔鄉</option>
-                            <option value="高樹鄉">高樹鄉</option>
-                            <option value="萬巒鄉">萬巒鄉</option>
-                            <option value="竹田鄉">竹田鄉</option>
-                            <option value="潮州鎮">潮州鎮</option>
-                            <option value="內埔鄉">內埔鄉</option>
-                        </select>
-                    </div>
-
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">第二層：服務類型 (17 類別)</label>
-                        <select id="dispatchService" onchange="updateDispatchUnitOptions()" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-teal-500 focus:border-teal-500 text-sm">
-                            <option value="">-- 請選擇服務類型 --</option>
-                            <option value="居家服務">居家服務</option>
-                            <option value="到宅沐浴">到宅沐浴</option>
-                            <option value="日間照顧">日間照顧</option>
-                            <option value="家庭托顧">家庭托顧</option>
-                            <option value="專業服務">專業服務</option>
-                            <option value="居家喘息">居家喘息</option>
-                            <option value="日照喘息">日照喘息</option>
-                            <option value="機構喘息">機構喘息</option>
-                            <option value="小規機喘息">小規機喘息</option>
-                            <option value="巷弄喘息">巷弄喘息</option>
-                            <option value="餐飲服務">餐飲服務</option>
-                            <option value="失智共照">失智共照</option>
-                            <option value="失智據點">失智據點</option>
-                            <option value="家照者支持">家照者支持</option>
-                            <option value="團體家屋">團體家屋</option>
-                            <option value="交通接送">交通接送</option>
-                            <option value="BD03">BD03</option>
-                        </select>
-                    </div>
-
-                    <div class="flex items-end">
-                        <div class="bg-amber-50 border border-amber-200 rounded-md p-2 text-xs text-amber-800 w-full">
-                            <i class="fa-solid fa-lightbulb mr-1"></i> 系統將依照歷史派案次數最少與最久未獲派案者自動順排優先輪派單位。
-                        </div>
-                    </div>
+        <!-- 一般派案 -->
+        <div id="regularTab">
+            <form onsubmit="handleSubmit(event, '一般派案')">
+                <div class="form-group">
+                    <label>個案姓名</label>
+                    <input type="text" placeholder="請輸入個案姓名" required>
                 </div>
-            </div>
-
-            <!-- 新增個案派案區 -->
-            <div class="bg-white rounded-xl shadow p-6">
-                <h2 class="text-lg font-bold text-gray-800 mb-4 flex items-center">
-                    <i class="fa-solid fa-user-plus text-teal-600 mr-2"></i>手動新增輪派個案
-                </h2>
-                <form onsubmit="handleAddDispatch(event)" class="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">A 個管職編</label>
-                        <input type="text" id="addCaseManager" readonly class="w-full px-3 py-2 bg-gray-100 border border-gray-300 rounded-md text-sm text-gray-600">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">個案姓名</label>
-                        <input type="text" id="addCaseName" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-teal-500 focus:border-teal-500 text-sm">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">個案 身分證字號 (ID)</label>
-                        <input type="text" id="addCaseId" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-teal-500 focus:border-teal-500 text-sm">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">自動輪派服務單位全銜</label>
-                        <input type="text" id="autoSuggestedUnit" readonly placeholder="選擇區域與類型後自動帶入" class="w-full px-3 py-2 bg-teal-50 font-semibold text-teal-800 border border-teal-300 rounded-md text-sm">
-                    </div>
-                    <div>
-                        <button type="submit" class="w-full bg-teal-600 hover:bg-teal-700 text-white font-medium py-2 rounded-md shadow transition flex items-center justify-center space-x-1">
-                            <i class="fa-solid fa-paper-plane"></i>
-                            <span>建立一般輪派</span>
-                        </button>
-                    </div>
-                </form>
-            </div>
-
-            <!-- 一般輪派清冊列表 -->
-            <div class="bg-white rounded-xl shadow overflow-hidden">
-                <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center bg-gray-50">
-                    <h3 class="font-bold text-gray-800 flex items-center">
-                        <i class="fa-solid fa-table-list mr-2 text-teal-600"></i>一般輪派清冊
-                    </h3>
-                    <span class="text-xs text-gray-500">提示：尚未回覆之表格底色顯示為 <span class="bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded border border-emerald-300">淺綠色</span></span>
+                <div class="form-group">
+                    <label>服務單位</label>
+                    <select required>
+                        <option value="">請選擇單位</option>
+                        <option value="A單位">A單位 - 社區整合型服務中心</option>
+                        <option value="B單位">B單位 - 居家照護服務中心</option>
+                        <option value="C單位">C單位 - 巷弄長照站</option>
+                    </select>
                 </div>
-                <div class="overflow-x-auto">
-                    <table class="w-full text-sm text-left text-gray-700">
-                        <thead class="text-xs text-gray-700 uppercase bg-gray-100 border-b">
-                            <tr>
-                                <th class="px-4 py-3">A 個管</th>
-                                <th class="px-4 py-3">派案日期</th>
-                                <th class="px-4 py-3">個案姓名</th>
-                                <th class="px-4 py-3">個案 ID</th>
-                                <th class="px-4 py-3">服務區域</th>
-                                <th class="px-4 py-3">服務類型</th>
-                                <th class="px-4 py-3">輪派單位全銜</th>
-                                <th class="px-4 py-3">回覆狀態</th>
-                                <th class="px-4 py-3">無法提供服務原因</th>
-                                <th class="px-4 py-3">操作</th>
-                            </tr>
-                        </thead>
-                        <tbody id="dispatchTableBody">
-                            <!-- JS Dynamically rendered -->
-                        </tbody>
-                    </table>
+                <div class="form-group">
+                    <label>聯絡電話</label>
+                    <input type="text" placeholder="0912-345-678">
                 </div>
-            </div>
+                <button type="submit" class="btn">送出派案</button>
+            </form>
         </div>
 
-        <!-- TAB 2: 其他派案 -->
-        <div id="tab-other" class="tab-content hidden space-y-6">
-            <div class="bg-white rounded-xl shadow p-6 border-l-4 border-cyan-600">
-                <h2 class="text-lg font-bold text-gray-800 mb-4 flex items-center">
-                    <i class="fa-solid fa-pen-to-square text-cyan-600 mr-2"></i>手動新增其他類型派案
-                </h2>
-                <form onsubmit="handleAddOtherDispatch(event)" class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">A 個管</label>
-                        <input type="text" id="otherCaseManager" readonly class="w-full px-3 py-2 bg-gray-100 border border-gray-300 rounded-md text-sm">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">派案類型 (下拉選擇)</label>
-                        <select id="otherDispatchType" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-cyan-500 focus:border-cyan-500 text-sm">
-                            <option value="家屬意願">家屬意願</option>
-                            <option value="單位開發">單位開發</option>
-                            <option value="改派">改派</option>
-                            <option value="出備派案">出備派案</option>
-                            <option value="服務媒合">服務媒合</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">個案姓名</label>
-                        <input type="text" id="otherCaseName" required class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">個案 ID</label>
-                        <input type="text" id="otherCaseId" required class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">服務區域</label>
-                        <select id="otherDistrict" onchange="filterOtherUnitDropdown()" required class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm">
-                            <option value="">-- 請選擇鄉鎮 --</option>
-                            <option value="屏東市">屏東市</option><option value="萬丹鄉">萬丹鄉</option><option value="長治鄉">長治鄉</option>
-                            <option value="麟洛鄉">麟洛鄉</option><option value="九如鄉">九如鄉</option><option value="里港鄉">里港鄉</option>
-                            <option value="鹽埔鄉">鹽埔鄉</option><option value="高樹鄉">高樹鄉</option><option value="萬巒鄉">萬巒鄉</option>
-                            <option value="竹田鄉">竹田鄉</option><option value="潮州鎮">潮州鎮</option><option value="內埔鄉">內埔鄉</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">服務類型</label>
-                        <select id="otherService" onchange="filterOtherUnitDropdown()" required class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm">
-                            <option value="">-- 請選擇服務類型 --</option>
-                            <option value="居家服務">居家服務</option><option value="到宅沐浴">到宅沐浴</option><option value="日間照顧">日間照顧</option>
-                            <option value="家庭托顧">家庭托顧</option><option value="專業服務">專業服務</option><option value="居家喘息">居家喘息</option>
-                            <option value="日照喘息">日照喘息</option><option value="機構喘息">機構喘息</option><option value="小規機喘息">小規機喘息</option>
-                            <option value="巷弄喘息">巷弄喘息</option><option value="餐飲服務">餐飲服務</option><option value="失智共照">失智共照</option>
-                            <option value="失智據點">失智據點</option><option value="家照者支持">家照者支持</option><option value="團體家屋">團體家屋</option>
-                            <option value="交通接送">交通接送</option><option value="BD03">BD03</option>
-                        </select>
-                    </div>
-                    <div class="col-span-1 md:col-span-2">
-                        <label class="block text-sm font-medium text-gray-700 mb-1">指定服務單位全銜 (可搜尋/手動輸入)</label>
-                        <input type="text" id="otherUnitInput" list="otherUnitDatalist" required placeholder="請輸入服務單位全銜，或輸入關鍵字搜尋／選擇" class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-cyan-500 focus:border-cyan-500">
-                        <datalist id="otherUnitDatalist">
-                            <!-- JS Dynamically populated -->
-                        </datalist>
-                    </div>
-                    <div class="col-span-1 md:col-span-4">
-                        <button type="submit" class="w-full bg-cyan-600 hover:bg-cyan-700 text-white font-medium py-2 rounded-md shadow transition flex items-center justify-center space-x-1">
-                            <i class="fa-solid fa-plus-circle"></i>
-                            <span>建立其他類型派案</span>
-                        </button>
-                    </div>
-                </form>
-            </div>
-
-            <!-- 其他派案表格 -->
-            <div class="bg-white rounded-xl shadow overflow-hidden">
-                <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center bg-gray-50">
-                    <h3 class="font-bold text-gray-800 flex items-center">
-                        <i class="fa-solid fa-table-list mr-2 text-cyan-600"></i>其他派案清冊
-                    </h3>
-                    <span class="text-xs text-gray-500">提示：尚未回覆之表格底色顯示為 <span class="bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded border border-emerald-300">淺綠色</span></span>
+        <!-- 其他派案 -->
+        <div id="otherTab" class="hidden">
+            <form onsubmit="handleSubmit(event, '其他派案')">
+                <div class="form-group">
+                    <label>個案姓名</label>
+                    <input type="text" placeholder="請輸入個案姓名" required>
                 </div>
-                <div class="overflow-x-auto">
-                    <table class="w-full text-sm text-left text-gray-700">
-                        <thead class="text-xs text-gray-700 uppercase bg-gray-100 border-b">
-                            <tr>
-                                <th class="px-4 py-3">A 個管</th>
-                                <th class="px-4 py-3">派案類型</th>
-                                <th class="px-4 py-3">派案日期</th>
-                                <th class="px-4 py-3">個案姓名</th>
-                                <th class="px-4 py-3">個案 ID</th>
-                                <th class="px-4 py-3">服務區域</th>
-                                <th class="px-4 py-3">服務類型</th>
-                                <th class="px-4 py-3">服務單位全銜</th>
-                                <th class="px-4 py-3">回覆狀態</th>
-                                <th class="px-4 py-3">無法提供服務原因</th>
-                                <th class="px-4 py-3">操作</th>
-                            </tr>
-                        </thead>
-                        <tbody id="otherTableBody">
-                            <!-- JS Dynamically rendered -->
-                        </tbody>
-                    </table>
+                <div class="form-group">
+                    <label for="otherServiceUnit">服務單位</label>
+                    <!-- 支援關鍵字搜尋與手動輸入新名稱 -->
+                    <input type="text" id="otherServiceUnit" list="unitOptions" placeholder="請輸入或搜尋服務單位全銜" required>
+                    <datalist id="unitOptions">
+                        <option value="財團法人屏東基督教醫院">
+                        <option value="社團法人屏東縣長期照護服務協會">
+                        <option value="屏東縣政府衛生局">
+                        <option value="高雄榮民總醫院屏東分院">
+                        <option value="衛生福利部屏東醫院">
+                    </datalist>
+                    <!-- 提示需輸入全銜 -->
+                    <div class="hint warning">提示：請輸入完整服務單位全銜（可手動輸入新增或關鍵字搜尋）</div>
                 </div>
-            </div>
+                <!-- 修正：已移除電話欄位 -->
+                <button type="submit" class="btn">送出派案</button>
+            </form>
         </div>
+    </div>
+</div>
 
-        <!-- TAB 3: 時效與成功統計 -->
-        <div id="tab-stats" class="tab-content hidden space-y-6">
-            <!-- 月度 KPI 統計卡片 -->
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div class="bg-white rounded-xl shadow p-6 border-l-4 border-blue-500 flex items-center justify-between">
-                    <div>
-                        <p class="text-xs text-gray-500">當月平均照會時效 (工作天)</p>
-                        <h3 id="avgReferralDays" class="text-2xl font-bold text-gray-800">0.0 天</h3>
-                        <p class="text-xs text-gray-400 mt-1">目標 <= 2 工作天</p>
-                    </div>
-                    <div class="p-3 bg-blue-100 rounded-full text-blue-600">
-                        <i class="fa-solid fa-clock-rotate-left text-2xl"></i>
-                    </div>
-                </div>
+<script>
+    const DEFAULT_ADMIN = "06190";
 
-                <div class="bg-white rounded-xl shadow p-6 border-l-4 border-emerald-500 flex items-center justify-between">
-                    <div>
-                        <p class="text-xs text-gray-500">當月平均服務時效 (工作天)</p>
-                        <h3 id="avgServiceDays" class="text-2xl font-bold text-gray-800">0.0 天</h3>
-                        <p class="text-xs text-gray-400 mt-1">指定類型目標 <= 5 工作天</p>
-                    </div>
-                    <div class="p-3 bg-emerald-100 rounded-full text-emerald-600">
-                        <i class="fa-solid fa-calendar-check text-2xl"></i>
-                    </div>
-                </div>
+    function handleLogin(e) {
+        e.preventDefault();
+        const empId = document.getElementById('empId').value.trim();
+        if (!empId) return;
 
-                <div class="bg-white rounded-xl shadow p-6 border-l-4 border-amber-500 flex items-center justify-between">
-                    <div>
-                        <p class="text-xs text-gray-500">當月派案成功總件數</p>
-                        <h3 id="totalSuccessCount" class="text-2xl font-bold text-gray-800">0 件</h3>
-                        <p class="text-xs text-gray-400 mt-1">包含一般輪派與其他派案</p>
-                    </div>
-                    <div class="p-3 bg-amber-100 rounded-full text-amber-600">
-                        <i class="fa-solid fa-award text-2xl"></i>
-                    </div>
-                </div>
-            </div>
+        let roleText = "一般使用者 (" + empId + ")";
+        if (empId === DEFAULT_ADMIN) {
+            roleText = "系統管理員 (" + empId + ")";
+        }
 
-            <!-- 派案成功案件時效填報與追蹤 -->
-            <div class="bg-white rounded-xl shadow overflow-hidden">
-                <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center bg-gray-50">
-                    <h3 class="font-bold text-gray-800 flex items-center">
-                        <i class="fa-solid fa-stopwatch text-blue-600 mr-2"></i>派案成功案件時效追蹤與管理 (工作天扣除假日與颱風假)
-                    </h3>
-                </div>
-                <div class="overflow-x-auto">
-                    <table class="w-full text-sm text-left text-gray-700">
-                        <thead class="text-xs text-gray-700 uppercase bg-gray-100 border-b">
-                            <tr>
-                                <th class="px-3 py-3">個案姓名 / ID</th>
-                                <th class="px-3 py-3">服務單位全銜</th>
-                                <th class="px-3 py-3">計畫通過日</th>
-                                <th class="px-3 py-3">照會日</th>
-                                <th class="px-3 py-3">第一次服務日</th>
-                                <th class="px-3 py-3">照會時效 (工作天)</th>
-                                <th class="px-3 py-3">服務時效 (工作天)</th>
-                                <th class="px-3 py-3">照會超時原因 (>2天)</th>
-                                <th class="px-3 py-3">服務超時原因 (>5天)</th>
-                                <th class="px-3 py-3">操作</th>
-                            </tr>
-                        </thead>
-                        <tbody id="statsTableBody">
-                            <!-- JS Dynamically rendered -->
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
+        document.getElementById('currentUser').textContent = roleText;
+        document.getElementById('loginSection').classList.add('hidden');
+        document.getElementById('appSection').classList.remove('hidden');
+    }
 
-        <!-- TAB 4: 系統設定與權限管理 (管理者專用) -->
-        <div id="tab-admin" class="tab-content hidden space-y-6">
-            <div class="bg-white rounded-xl shadow p-6 border-l-4 border-indigo-600">
-                <h2 class="text-lg font-bold text-gray-800 mb-4 flex items-center justify-between">
-                    <span><i class="fa-solid fa-sliders text-indigo-600 mr-2"></i>管理者控制台</span>
-                    <button onclick="exportReportsMenu()" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs px-3 py-1.5 rounded transition shadow flex items-center space-x-1">
-                        <i class="fa-solid fa-file-excel"></i>
-                        <span>匯出 Excel 報表選單</span>
-                    </button>
-                </h2>
+    function handleLogout() {
+        document.getElementById('loginSection').classList.remove('hidden');
+        document.getElementById('appSection').classList.add('hidden');
+        document.getElementById('empId').value = '';
+    }
 
-                <!-- 子分頁標籤 -->
-                <div class="flex border-b border-gray-200 mb-6 space-x-4">
-                    <button onclick="switchAdminSubTab('admin-holidays')" id="btn-sub-holidays" class="py-2 px-4 text-sm font-medium border-b-2 border-indigo-600 text-indigo-600">
-                        <i class="fa-solid fa-calendar-minus mr-1"></i>放假日設定 (颱風假/國定假)
-                    </button>
-                    <button onclick="switchAdminSubTab('admin-users')" id="btn-sub-users" class="py-2 px-4 text-sm font-medium text-gray-500 hover:text-gray-700">
-                        <i class="fa-solid fa-user-gear mr-1"></i>帳號權限管理
-                    </button>
-                    <button onclick="switchAdminSubTab('admin-units')" id="btn-sub-units" class="py-2 px-4 text-sm font-medium text-gray-500 hover:text-gray-700">
-                        <i class="fa-solid fa-building-circle-check mr-1"></i>B 單位清冊維護 (全數 299 家)
-                    </button>
-                </div>
+    function switchTab(type) {
+        const btns = document.querySelectorAll('.tab-btn');
+        btns.forEach(b => b.classList.remove('active'));
+        
+        if (type === 'regular') {
+            btns[0].classList.add('active');
+            document.getElementById('regularTab').classList.remove('hidden');
+            document.getElementById('otherTab').classList.add('hidden');
+        } else {
+            btns[1].classList.add('active');
+            document.getElementById('regularTab').classList.add('hidden');
+            document.getElementById('otherTab').classList.remove('hidden');
+        }
+    }
 
-                <!-- Admin Sub Tab 1: 放假日設定 -->
-                <div id="admin
+    function handleSubmit(e, type) {
+        e.preventDefault();
+        alert(type + ' 已成功送出！');
+    }
+</script>
+
+</body>
+</html>
