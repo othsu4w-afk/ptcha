@@ -6,1686 +6,1285 @@
     <title>115年屏東長照B單位公平輪派與管理系統</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- FontAwesome Icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- SheetJS (XLSX) for Real Excel Export -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    <!-- Google Fonts Inter -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script>
         tailwind.config = {
             theme: {
                 extend: {
                     colors: {
-                        slate: {
-                            850: '#1e293b',
-                        },
                         brand: {
-                            50: '#f0f9ff',
-                            100: '#e0f2fe',
-                            500: '#0284c7',
-                            600: '#0369a1',
-                            700: '#075985',
-                            800: '#0c4a6e',
+                            50: '#f0fdf4',
+                            100: '#dcfce7',
+                            500: '#22c55e',
+                            600: '#16a34a',
+                            700: '#15803d',
+                            800: '#166534',
+                            900: '#14532d',
                         }
-                    },
-                    fontFamily: {
-                        sans: ['Inter', 'Microsoft JhengHei', 'sans-serif'],
                     }
                 }
             }
         }
     </script>
+    <!-- FontAwesome Icons CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- SheetJS CDN (Excel Export) -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <style>
-        .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+        .custom-scrollbar::-webkit-scrollbar { height: 6px; width: 6px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: #f1f5f9; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
-        .unreplied-row { background-color: #d1fae5 !important; } /* 淺綠底色提示未回覆案件 */
+        .unreplied-row { background-color: #d1fae5 !important; } /* 淺綠底色提示未回覆 */
     </style>
 </head>
-<body class="bg-slate-100 text-slate-800 font-sans min-h-screen flex flex-col antialiased">
+<body class="bg-slate-100 min-h-screen font-sans text-slate-800 flex flex-col">
 
-    <!-- LOGIN MODAL / OVERLAY (Forces Login First) -->
-    <div id="loginModal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
-        <div class="bg-white rounded-2xl max-w-md w-full shadow-2xl border border-slate-200 overflow-hidden transform transition-all">
-            <div class="bg-gradient-to-r from-brand-800 to-teal-800 text-white p-6 text-center">
-                <div class="w-16 h-16 bg-white/10 rounded-full flex items-center justify-center mx-auto mb-3 border border-white/20">
-                    <i class="fa-solid fa-user-shield text-3xl text-teal-300"></i>
-                </div>
-                <h2 class="text-xl font-bold tracking-wide">屏東長照 A 單位派案系統</h2>
-                <p class="text-xs text-brand-100 mt-1">因應個資法防護，請先輸入職務編號進行身份驗證</p>
+<!-- LOGIN MODAL / OVERLAY (Forces Login First) -->
+<div id="loginModal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-md w-full shadow-2xl border border-slate-200 overflow-hidden transform transition-all">
+        <div class="bg-gradient-to-r from-brand-800 to-teal-800 text-white p-6 text-center">
+            <div class="w-16 h-16 bg-white/10 rounded-full flex items-center justify-center mx-auto mb-3 border border-white/20">
+                <i class="fa-solid fa-user-shield text-3xl text-teal-300"></i>
             </div>
-            
-            <form id="loginForm" onsubmit="handleLogin(event)" class="p-6 space-y-4">
+            <h2 class="text-xl font-bold tracking-wide">屏東長照 A 單位派案系統</h2>
+            <p class="text-xs text-brand-100 mt-1">因應個資法防護，請先輸入職務編號進行身份驗證</p>
+        </div>
+        
+        <form id="loginForm" onsubmit="handleLogin(event)" class="p-6 space-y-4">
+            <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">登入身分與權限選擇</label>
+                <select id="loginRole" onchange="toggleLoginInputHint()" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-xs font-medium focus:ring-2 focus:ring-brand-500 outline-none">
+                    <option value="CASE_MANAGER">A 個管師 (輸入職編)</option>
+                    <option value="ADMIN">管理者 / 輔助管理者 (管理者職編)</option>
+                </select>
+            </div>
+
+            <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1" id="loginIdLabel">職務編號 (職編)</label>
+                <input type="text" id="loginIdInput" required placeholder="請輸入您的職編 (例如: 06190)" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-brand-500 outline-none uppercase">
+                <p class="text-[11px] text-slate-400 mt-1" id="loginHint">提示：請輸入您的個管職編登入</p>
+            </div>
+
+            <button type="submit" class="w-full bg-brand-600 hover:bg-brand-700 text-white font-bold py-2.5 rounded-lg text-sm shadow transition flex items-center justify-center gap-2">
+                <i class="fa-solid fa-right-to-bracket"></i> 安全登入系統
+            </button>
+        </form>
+    </div>
+</div>
+
+<!-- MAIN APP HEADER -->
+<header class="bg-gradient-to-r from-brand-800 via-brand-700 to-teal-800 text-white shadow-md sticky top-0 z-30">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex items-center justify-between h-16">
+            <div class="flex items-center space-x-3">
+                <div class="bg-white/10 p-2 rounded-xl border border-white/20">
+                    <i class="fa-solid fa-hand-holding-heart text-xl text-teal-300"></i>
+                </div>
                 <div>
-                    <label class="block text-xs font-semibold text-slate-700 mb-1">登入身分與權限選擇</label>
-                    <select id="loginRole" onchange="toggleLoginInputHint()" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-xs font-medium focus:ring-2 focus:ring-brand-500 outline-none">
-                        <option value="CASE_MANAGER">A 個管師 (輸入職編)</option>
-                        <option value="ADMIN">管理者 / 輔助管理者 (管理者職編)</option>
+                    <h1 class="text-base sm:text-lg font-bold leading-tight">115年屏東長照B單位公平輪派與管理系統</h1>
+                    <p class="text-[11px] text-brand-100 hidden sm:block">轄區 12 鄉鎮 17 類服務單位輪派、派案與時效稽核 (預載299家合作單位)</p>
+                </div>
+            </div>
+
+            <div class="flex items-center space-x-3">
+                <div class="bg-brand-900/40 px-3 py-1.5 rounded-lg border border-brand-500/30 text-right">
+                    <div class="text-[10px] text-brand-200">當前登入者</div>
+                    <div class="font-semibold text-xs sm:text-sm text-white flex items-center gap-1.5">
+                        <span id="headerRoleBadge" class="bg-teal-500 text-white text-[10px] px-1.5 py-0.2 rounded">A個管</span>
+                        <span id="headerUserName">---</span>
+                        <span id="headerUserId" class="text-brand-200 text-xs">(---)</span>
+                    </div>
+                </div>
+                <button onclick="handleLogout()" class="text-xs bg-white/10 hover:bg-white/20 text-white px-3 py-2 rounded-lg transition border border-white/20 flex items-center gap-1">
+                    <i class="fa-solid fa-right-from-bracket"></i> <span class="hidden sm:inline">登出</span>
+                </button>
+            </div>
+        </div>
+    </div>
+</header>
+
+<!-- NAVIGATION TABS BAR -->
+<div class="bg-white border-b border-slate-200 shadow-sm sticky top-16 z-20">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-2 py-2">
+        <nav class="flex space-x-1 sm:space-x-2 overflow-x-auto custom-scrollbar w-full sm:w-auto pb-1 sm:pb-0" id="mainNavTabs">
+            <button onclick="switchTab('fair')" id="tab-fair" class="tab-btn active px-3.5 py-2 rounded-lg text-xs sm:text-sm font-semibold flex items-center gap-1.5 whitespace-nowrap transition bg-brand-50 text-brand-700 border border-brand-200">
+                <i class="fa-solid fa-arrows-spin text-brand-600"></i> 一般輪派
+            </button>
+            <button onclick="switchTab('other')" id="tab-other" class="tab-btn px-3.5 py-2 rounded-lg text-xs sm:text-sm font-semibold flex items-center gap-1.5 whitespace-nowrap transition text-slate-600 hover:bg-slate-100">
+                <i class="fa-solid fa-network-wired text-slate-500"></i> 其他派案
+            </button>
+            <button onclick="switchTab('kpi')" id="tab-kpi" class="tab-btn px-3.5 py-2 rounded-lg text-xs sm:text-sm font-semibold flex items-center gap-1.5 whitespace-nowrap transition text-slate-600 hover:bg-slate-100">
+                <i class="fa-solid fa-chart-line text-slate-500"></i> 派案成功與時效統計
+            </button>
+            <button onclick="switchTab('settings')" id="tab-settings" class="tab-btn px-3.5 py-2 rounded-lg text-xs sm:text-sm font-semibold flex items-center gap-1.5 whitespace-nowrap transition text-slate-600 hover:bg-slate-100 border-l border-slate-200 pl-3">
+                <i class="fa-solid fa-sliders text-slate-500"></i> 系統設定與權限管理
+            </button>
+        </nav>
+
+        <div class="flex items-center gap-2 self-end sm:self-auto">
+            <button onclick="resetDataToDefault()" class="text-[11px] bg-slate-100 hover:bg-red-50 text-slate-600 hover:text-red-600 px-2.5 py-1.5 rounded border border-slate-300 transition" title="重置為初始預設數據">
+                <i class="fa-solid fa-rotate text-xs mr-1"></i>重置測試數據
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- MAIN CONTENT CONTAINER -->
+<main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+
+    <!-- PAGE 1: 一般輪派 -->
+    <section id="page-fair" class="page-content space-y-6">
+        <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 space-y-4">
+            <div class="flex flex-col sm:flex-row justify-between sm:items-center gap-2 border-b border-slate-100 pb-3">
+                <h2 class="text-base font-bold text-slate-800 flex items-center gap-2">
+                    <i class="fa-solid fa-arrows-spin text-brand-600"></i> 一般輪派與自動配對作業
+                </h2>
+                <div class="text-xs text-slate-500 bg-slate-50 px-3 py-1 rounded-md border border-slate-200">
+                    提示：系統自動選擇「歷史派案次數最少」且「最久未獲派案」之有效 B 單位
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">第一層：服務區域 (鄉鎮)</label>
+                    <select id="fairFilterDistrict" onchange="updateFairRecommendUnit()" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-xs focus:ring-2 focus:ring-brand-500 outline-none">
+                        <option value="">-- 請選擇鄉鎮區域 --</option>
                     </select>
                 </div>
 
                 <div>
-                    <label class="block text-xs font-semibold text-slate-700 mb-1" id="loginIdLabel">職務編號 (職編)</label>
-                    <input type="text" id="loginIdInput" required placeholder="請輸入您的職編 (例如: 06190)" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-brand-500 outline-none uppercase">
-                    <p class="text-[11px] text-slate-400 mt-1" id="loginHint">提示：請輸入您的個管職編登入</p>
-                </div>
-
-                <button type="submit" class="w-full bg-brand-600 hover:bg-brand-700 text-white font-bold py-2.5 rounded-lg text-sm shadow transition flex items-center justify-center gap-2">
-                    <i class="fa-solid fa-right-to-bracket"></i> 安全登入系統
-                </button>
-            </form>
-        </div>
-    </div>
-
-    <!-- MAIN APP HEADER -->
-    <header class="bg-gradient-to-r from-brand-800 via-brand-700 to-teal-800 text-white shadow-md sticky top-0 z-30">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex items-center justify-between h-16">
-                <!-- System Title -->
-                <div class="flex items-center space-x-3">
-                    <div class="bg-white/10 p-2 rounded-xl border border-white/20">
-                        <i class="fa-solid fa-hand-holding-heart text-xl text-teal-300"></i>
-                    </div>
-                    <div>
-                        <h1 class="text-base sm:text-lg font-bold leading-tight">115年屏東長照B單位公平輪派與管理系統</h1>
-                        <p class="text-[11px] text-brand-100 hidden sm:block">轄區 12 鄉鎮 17 類服務單位輪派、派案與時效稽核 (預載299家合作單位)</p>
-                    </div>
-                </div>
-
-                <!-- User Profile & Controls -->
-                <div class="flex items-center space-x-3">
-                    <div class="bg-brand-900/40 px-3 py-1.5 rounded-lg border border-brand-500/30 text-right">
-                        <div class="text-[10px] text-brand-200">當前登入者</div>
-                        <div class="font-semibold text-xs sm:text-sm text-white flex items-center gap-1.5">
-                            <span id="headerRoleBadge" class="bg-teal-500 text-white text-[10px] px-1.5 py-0.2 rounded">A個管</span>
-                            <span id="headerUserName">---</span>
-                            <span id="headerUserId" class="text-brand-200 text-xs">(---)</span>
-                        </div>
-                    </div>
-                    <button onclick="handleLogout()" class="text-xs bg-white/10 hover:bg-white/20 text-white px-3 py-2 rounded-lg transition border border-white/20 flex items-center gap-1">
-                        <i class="fa-solid fa-right-from-bracket"></i> <span class="hidden sm:inline">登出</span>
-                    </button>
-                </div>
-            </div>
-        </div>
-    </header>
-
-    <!-- NAVIGATION TABS BAR -->
-    <div class="bg-white border-b border-slate-200 shadow-sm sticky top-16 z-20">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-2 py-2">
-            <nav class="flex space-x-1 sm:space-x-2 overflow-x-auto custom-scrollbar w-full sm:w-auto pb-1 sm:pb-0" id="mainNavTabs">
-                <button onclick="switchTab('fair')" id="tab-fair" class="tab-btn active px-3.5 py-2 rounded-lg text-xs sm:text-sm font-semibold flex items-center gap-1.5 whitespace-nowrap transition bg-brand-50 text-brand-700 border border-brand-200">
-                    <i class="fa-solid fa-arrows-spin text-brand-600"></i> 一般輪派
-                </button>
-                <button onclick="switchTab('other')" id="tab-other" class="tab-btn px-3.5 py-2 rounded-lg text-xs sm:text-sm font-semibold flex items-center gap-1.5 whitespace-nowrap transition text-slate-600 hover:bg-slate-100">
-                    <i class="fa-solid fa-network-wired text-slate-500"></i> 其他派案
-                </button>
-                <button onclick="switchTab('kpi')" id="tab-kpi" class="tab-btn px-3.5 py-2 rounded-lg text-xs sm:text-sm font-semibold flex items-center gap-1.5 whitespace-nowrap transition text-slate-600 hover:bg-slate-100">
-                    <i class="fa-solid fa-chart-line text-slate-500"></i> 派案成功與時效統計
-                </button>
-                <button onclick="switchTab('settings')" id="tab-settings" class="tab-btn px-3.5 py-2 rounded-lg text-xs sm:text-sm font-semibold flex items-center gap-1.5 whitespace-nowrap transition text-slate-600 hover:bg-slate-100 border-l border-slate-200 pl-3">
-                    <i class="fa-solid fa-sliders text-slate-500"></i> 系統設定與權限管理
-                </button>
-            </nav>
-
-            <div class="flex items-center gap-2 self-end sm:self-auto">
-                <button onclick="resetDataToDefault()" class="text-[11px] bg-slate-100 hover:bg-red-50 text-slate-600 hover:text-red-600 px-2.5 py-1.5 rounded border border-slate-300 transition" title="重置為初始預設數據">
-                    <i class="fa-solid fa-rotate text-xs mr-1"></i>重置測試數據
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- MAIN CONTENT CONTAINER -->
-    <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
-
-        <!-- ================= PAGE 1: 一般輪派 ================= -->
-        <section id="page-fair" class="page-content space-y-6">
-            <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 space-y-4">
-                <div class="flex flex-col sm:flex-row justify-between sm:items-center gap-2 border-b border-slate-100 pb-3">
-                    <h2 class="text-base font-bold text-slate-800 flex items-center gap-2">
-                        <i class="fa-solid fa-arrows-spin text-brand-600"></i> 一般輪派與自動配對作業
-                    </h2>
-                    <div class="text-xs text-slate-500 bg-slate-50 px-3 py-1 rounded-md border border-slate-200">
-                        提示：系統自動選擇「歷史派案次數最少」且「最久未獲派案」之有效 B 單位
-                    </div>
-                </div>
-
-                <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-600 mb-1">第一層：服務區域 (鄉鎮)</label>
-                        <select id="fairFilterDistrict" onchange="updateFairRecommendUnit()" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-xs focus:ring-2 focus:ring-brand-500 outline-none">
-                            <option value="">-- 請選擇鄉鎮區域 --</option>
-                        </select>
-                    </div>
-
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-600 mb-1">第二層：服務類型</label>
-                        <select id="fairFilterService" onchange="updateFairRecommendUnit()" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-xs focus:ring-2 focus:ring-brand-500 outline-none">
-                            <option value="">-- 請選擇服務類型 --</option>
-                        </select>
-                    </div>
-
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-600 mb-1">個案姓名 *</label>
-                        <input type="text" id="fairCaseName" placeholder="輸入個案姓名" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-xs focus:ring-2 focus:ring-brand-500 outline-none">
-                    </div>
-
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-600 mb-1">個案身分證字號 (ID) *</label>
-                        <input type="text" id="fairCaseId" placeholder="例如: T123456789" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-xs focus:ring-2 focus:ring-brand-500 outline-none uppercase">
-                    </div>
-                </div>
-
-                <!-- Fair Algorithm Recommendation Preview Box -->
-                <div class="bg-emerald-50/80 border border-emerald-200 p-3.5 rounded-xl flex flex-col sm:flex-row justify-between sm:items-center gap-3">
-                    <div class="flex items-center gap-3">
-                        <div class="bg-emerald-600 text-white p-2.5 rounded-lg shadow-sm">
-                            <i class="fa-solid fa-scale-balanced text-lg"></i>
-                        </div>
-                        <div>
-                            <div class="text-[11px] text-emerald-800 font-semibold uppercase">公平輪派建議第一順位單位</div>
-                            <div class="text-sm font-bold text-emerald-950 flex items-center gap-2" id="fairRecommendText">
-                                請選擇區域與類型進行比對
-                            </div>
-                        </div>
-                    </div>
-
-                    <button onclick="submitFairDispatch()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-4 py-2 rounded-lg text-xs shadow transition flex items-center gap-1.5 justify-center">
-                        <i class="fa-solid fa-plus-circle"></i> 新增公平輪派紀錄 (帶入建議單位)
-                    </button>
-                </div>
-            </div>
-
-            <!-- Fair Dispatch Records Table -->
-            <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-                <div class="px-5 py-3 bg-slate-50 border-b border-slate-200 flex justify-between items-center">
-                    <h3 class="text-xs sm:text-sm font-bold text-slate-700 flex items-center gap-2">
-                        <i class="fa-solid fa-list-check text-brand-600"></i> 一般輪派歷史與回覆紀錄表
-                    </h3>
-                    <span class="text-[11px] text-slate-500">註：<span class="inline-block w-3 h-3 bg-emerald-200 border border-emerald-400 rounded-sm align-middle mr-1"></span>淺綠底色代表「尚未回覆」狀態</span>
-                </div>
-
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left text-xs">
-                        <thead class="bg-slate-100 text-slate-700 uppercase font-semibold border-b border-slate-200">
-                            <tr>
-                                <th class="py-3 px-3">派案日期</th>
-                                <th class="py-3 px-3">A 個管</th>
-                                <th class="py-3 px-3">區域/類型</th>
-                                <th class="py-3 px-3">個案姓名 (ID)</th>
-                                <th class="py-3 px-3">輪派 B 單位全銜</th>
-                                <th class="py-3 px-3">回覆狀態</th>
-                                <th class="py-3 px-3">未收案詳細原因</th>
-                                <th class="py-3 px-3 text-center">操作/改派</th>
-                            </tr>
-                        </thead>
-                        <tbody id="fairRecordsTbody" class="divide-y divide-slate-200">
-                            <!-- Dynamic Render -->
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </section>
-
-
-        <!-- ================= PAGE 2: 其他派案 ================= -->
-        <section id="page-other" class="page-content hidden space-y-6">
-            <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 space-y-4">
-                <div class="flex justify-between items-center border-b border-slate-100 pb-3">
-                    <h2 class="text-base font-bold text-slate-800 flex items-center gap-2">
-                        <i class="fa-solid fa-network-wired text-brand-600"></i> 其他派案 (家屬意願/單位開發/改派/出備派案/服務媒合)
-                    </h2>
-                </div>
-
-                <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-600 mb-1">派案類型 *</label>
-                        <select id="otherDispatchType" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-xs focus:ring-2 focus:ring-brand-500 outline-none font-semibold text-brand-800">
-                            <option value="家屬意願">家屬意願</option>
-                            <option value="單位開發">單位開發</option>
-                            <option value="改派">改派</option>
-                            <option value="出備派案">出備派案</option>
-                            <option value="服務媒合">服務媒合</option>
-                        </select>
-                    </div>
-
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-600 mb-1">服務區域 (鄉鎮) *</label>
-                        <select id="otherDistrict" onchange="filterOtherUnitsDropdown()" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-xs focus:ring-2 focus:ring-brand-500 outline-none">
-                            <option value="">-- 請選擇鄉鎮區域 --</option>
-                        </select>
-                    </div>
-
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-600 mb-1">服務類型 *</label>
-                        <select id="otherService" onchange="filterOtherUnitsDropdown()" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-xs focus:ring-2 focus:ring-brand-500 outline-none">
-                            <option value="">-- 請選擇服務類型 --</option>
-                        </select>
-                    </div>
-
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-600 mb-1">指定 B 單位 (可關鍵字搜尋) *</label>
-                        <input type="text" id="otherUnitSearch" onkeyup="filterOtherUnitsDropdown()" placeholder="輸入關鍵字篩選單位..." class="w-full bg-slate-50 border border-slate-300 rounded-lg p-1.5 text-xs mb-1 outline-none">
-                        <select id="otherUnitSelect" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-xs focus:ring-2 focus:ring-brand-500 outline-none">
-                            <option value="">-- 先選擇區域與類型 --</option>
-                        </select>
-                    </div>
-
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-600 mb-1">個案姓名 *</label>
-                        <input type="text" id="otherCaseName" placeholder="輸入個案姓名" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-xs focus:ring-2 focus:ring-brand-500 outline-none">
-                    </div>
-
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-600 mb-1">個案 ID *</label>
-                        <input type="text" id="otherCaseId" placeholder="身分證字號" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-xs focus:ring-2 focus:ring-brand-500 outline-none uppercase">
-                    </div>
-
-                    <div class="md:col-span-2 flex items-end">
-                        <button onclick="submitOtherDispatch()" class="w-full bg-brand-600 hover:bg-brand-700 text-white font-bold py-2 rounded-lg text-xs shadow transition flex items-center justify-center gap-1.5">
-                            <i class="fa-solid fa-paper-plane"></i> 送出其他派案紀錄
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Other Dispatch Table -->
-            <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-                <div class="px-5 py-3 bg-slate-50 border-b border-slate-200 flex justify-between items-center">
-                    <h3 class="text-xs sm:text-sm font-bold text-slate-700 flex items-center gap-2">
-                        <i class="fa-solid fa-list-check text-brand-600"></i> 其他派案歷史紀錄清冊
-                    </h3>
-                </div>
-
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left text-xs">
-                        <thead class="bg-slate-100 text-slate-700 uppercase font-semibold border-b border-slate-200">
-                            <tr>
-                                <th class="py-3 px-3">派案日期</th>
-                                <th class="py-3 px-3">A 個管</th>
-                                <th class="py-3 px-3">派案類型</th>
-                                <th class="py-3 px-3">區域/類型</th>
-                                <th class="py-3 px-3">個案姓名 (ID)</th>
-                                <th class="py-3 px-3">指定 B 單位全銜</th>
-                                <th class="py-3 px-3">回覆狀態</th>
-                                <th class="py-3 px-3">未收案原因</th>
-                                <th class="py-3 px-3 text-center">操作</th>
-                            </tr>
-                        </thead>
-                        <tbody id="otherRecordsTbody" class="divide-y divide-slate-200">
-                            <!-- Dynamic Render -->
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </section>
-
-
-        <!-- ================= PAGE 3: 時效與成功統計 ================= -->
-        <section id="page-kpi" class="page-content hidden space-y-6">
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
-                    <div>
-                        <div class="text-xs text-slate-500 font-semibold">派案成功案件數</div>
-                        <div class="text-2xl font-bold text-slate-800" id="kpiSuccessCount">0</div>
-                    </div>
-                    <div class="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center text-xl">
-                        <i class="fa-solid fa-circle-check"></i>
-                    </div>
-                </div>
-
-                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
-                    <div>
-                        <div class="text-xs text-slate-500 font-semibold">平均照會時效 (工作天)</div>
-                        <div class="text-2xl font-bold text-brand-700" id="kpiAvgReferral">0.0 天</div>
-                        <div class="text-[10px] text-slate-400">指標限制：≦ 2 工作天</div>
-                    </div>
-                    <div class="w-12 h-12 bg-brand-50 text-brand-600 rounded-full flex items-center justify-center text-xl">
-                        <i class="fa-solid fa-stopwatch"></i>
-                    </div>
-                </div>
-
-                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
-                    <div>
-                        <div class="text-xs text-slate-500 font-semibold">平均服務時效 (工作天)</div>
-                        <div class="text-2xl font-bold text-indigo-700" id="kpiAvgService">0.0 天</div>
-                        <div class="text-[10px] text-slate-400">特定6大類指標：≦ 5 工作天</div>
-                    </div>
-                    <div class="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center text-xl">
-                        <i class="fa-solid fa-truck-medical"></i>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Successful Records Timeline Table -->
-            <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden space-y-3 p-5">
-                <div class="flex flex-col sm:flex-row justify-between sm:items-center gap-2 border-b border-slate-100 pb-3">
-                    <div>
-                        <h3 class="text-base font-bold text-slate-800 flex items-center gap-2">
-                            <i class="fa-solid fa-clock-rotate-left text-brand-600"></i> 派案成功案件時效追蹤與登錄
-                        </h3>
-                        <p class="text-xs text-slate-500">時效計算已自動排除星期六、星期日及【系統設定之放假日】。超過限制時數顯示紅字並記錄備註。</p>
-                    </div>
-
-                    <div class="flex items-center gap-2">
-                        <label class="text-xs font-semibold text-slate-600">依月份篩選:</label>
-                        <input type="month" id="kpiMonthFilter" onchange="renderKpiTable()" class="bg-slate-50 border border-slate-300 rounded p-1 text-xs">
-                    </div>
-                </div>
-
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left text-xs">
-                        <thead class="bg-slate-100 text-slate-700 uppercase font-semibold border-b border-slate-200">
-                            <tr>
-                                <th class="py-3 px-3">派案日期</th>
-                                <th class="py-3 px-3">個案姓名 (ID)</th>
-                                <th class="py-3 px-3">服務項目</th>
-                                <th class="py-3 px-3">B 單位全銜</th>
-                                <th class="py-3 px-3">1. 計畫通過日</th>
-                                <th class="py-3 px-3">2. 照會日</th>
-                                <th class="py-3 px-3">3. 第一次服務日</th>
-                                <th class="py-3 px-3 text-center">照會時效(天)</th>
-                                <th class="py-3 px-3 text-center">服務時效(天)</th>
-                                <th class="py-3 px-3">超時原因備註</th>
-                            </tr>
-                        </thead>
-                        <tbody id="kpiTableTbody" class="divide-y divide-slate-200">
-                            <!-- Dynamic Render -->
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </section>
-
-
-        <!-- ================= PAGE 4: 系統設定與權限管理 ================= -->
-        <section id="page-settings" class="page-content hidden space-y-6">
-            <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-wrap gap-2">
-                <button onclick="switchSettingsSubtab('holidays')" id="subtab-holidays" class="subtab-btn active px-3 py-1.5 rounded-lg text-xs font-bold bg-brand-600 text-white">
-                    <i class="fa-solid fa-calendar-day mr-1"></i> 放假日設定
-                </button>
-                <button onclick="switchSettingsSubtab('users')" id="subtab-users" class="subtab-btn px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-100 text-slate-600 hover:bg-slate-200">
-                    <i class="fa-solid fa-users-gear mr-1"></i> 帳號與輔助管理權限
-                </button>
-                <button onclick="switchSettingsSubtab('units')" id="subtab-units" class="subtab-btn px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-100 text-slate-600 hover:bg-slate-200">
-                    <i class="fa-solid fa-building-user mr-1"></i> B 單位維護 (全數299家預載)
-                </button>
-                <button onclick="switchSettingsSubtab('reports')" id="subtab-reports" class="subtab-btn px-3 py-1.5 rounded-lg text-xs font-bold bg-emerald-600 text-white hover:bg-emerald-700 ml-auto">
-                    <i class="fa-solid fa-file-excel mr-1"></i> 匯出 Excel 報表
-                </button>
-            </div>
-
-            <!-- SUBTAB 1: 放假日設定 -->
-            <div id="subcontent-holidays" class="subcontent bg-white p-5 rounded-xl shadow-sm border border-slate-200 space-y-4">
-                <h3 class="text-sm font-bold text-slate-800 border-b border-slate-100 pb-2">
-                    手動新增放假日 (如颱風假、特殊節假日)
-                </h3>
-                
-                <div class="flex flex-wrap items-end gap-3 bg-slate-50 p-3 rounded-lg border border-slate-200">
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-600 mb-1">日期</label>
-                        <input type="date" id="holidayDate" class="bg-white border border-slate-300 rounded p-2 text-xs">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-600 mb-1">假別/說明</label>
-                        <input type="text" id="holidayName" placeholder="例如: 颱風假" class="bg-white border border-slate-300 rounded p-2 text-xs w-48">
-                    </div>
-                    <button onclick="addHoliday()" class="bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold px-4 py-2 rounded-lg transition">
-                        <i class="fa-solid fa-plus mr-1"></i> 新增放假日
-                    </button>
-                </div>
-
-                <div class="overflow-x-auto border border-slate-200 rounded-lg max-w-xl">
-                    <table class="w-full text-left text-xs">
-                        <thead class="bg-slate-100 font-semibold border-b border-slate-200">
-                            <tr>
-                                <th class="py-2 px-3">日期</th>
-                                <th class="py-2 px-3">假別名稱</th>
-                                <th class="py-2 px-3 text-center">操作</th>
-                            </tr>
-                        </thead>
-                        <tbody id="holidaysTbody" class="divide-y divide-slate-100">
-                            <!-- Dynamic render -->
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            <!-- SUBTAB 2: 帳號與權限設定 -->
-            <div id="subcontent-users" class="subcontent hidden bg-white p-5 rounded-xl shadow-sm border border-slate-200 space-y-4">
-                <h3 class="text-sm font-bold text-slate-800 border-b border-slate-100 pb-2">
-                    A個管帳號與輔助管理權限設定
-                </h3>
-
-                <div class="flex flex-wrap items-end gap-3 bg-slate-50 p-3 rounded-lg border border-slate-200">
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-600 mb-1">個管職編 *</label>
-                        <input type="text" id="userFormId" placeholder="如: A003" class="bg-white border border-slate-300 rounded p-2 text-xs uppercase">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-600 mb-1">個管姓名 *</label>
-                        <input type="text" id="userFormName" placeholder="如: 張個管" class="bg-white border border-slate-300 rounded p-2 text-xs">
-                    </div>
-                    <div class="flex items-center gap-1 pb-2">
-                        <input type="checkbox" id="userFormIsAssistant" class="rounded text-brand-600">
-                        <label for="userFormIsAssistant" class="text-xs font-semibold text-slate-700">賦予輔助管理權限</label>
-                    </div>
-                    <button onclick="saveUserAccount()" class="bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold px-4 py-2 rounded-lg transition">
-                        儲存/新增帳號
-                    </button>
-                </div>
-
-                <div class="overflow-x-auto border border-slate-200 rounded-lg max-w-2xl">
-                    <table class="w-full text-left text-xs">
-                        <thead class="bg-slate-100 font-semibold border-b border-slate-200">
-                            <tr>
-                                <th class="py-2 px-3">職編</th>
-                                <th class="py-2 px-3">姓名</th>
-                                <th class="py-2 px-3">權限身分</th>
-                                <th class="py-2 px-3 text-center">輔助管理者開關</th>
-                                <th class="py-2 px-3 text-center">操作</th>
-                            </tr>
-                        </thead>
-                        <tbody id="usersTbody" class="divide-y divide-slate-100">
-                            <!-- Dynamic render -->
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            <!-- SUBTAB 3: B 單位維護 -->
-            <div id="subcontent-units" class="subcontent hidden bg-white p-5 rounded-xl shadow-sm border border-slate-200 space-y-4">
-                <div class="flex justify-between items-center border-b border-slate-100 pb-2">
-                    <h3 class="text-sm font-bold text-slate-800">
-                        服務單位資料庫維護 (已載入 299 家 B 單位，含區域、類型及暫停派案)
-                    </h3>
-                    <button onclick="openAddUnitModal()" class="bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold px-3 py-1.5 rounded-lg">
-                        <i class="fa-solid fa-plus mr-1"></i> 新增 B 單位
-                    </button>
-                </div>
-
-                <div class="overflow-x-auto border border-slate-200 rounded-lg">
-                    <table class="w-full text-left text-xs">
-                        <thead class="bg-slate-100 font-semibold border-b border-slate-200">
-                            <tr>
-                                <th class="py-2.5 px-3">單位全銜</th>
-                                <th class="py-2.5 px-3">涵蓋區域鄉鎮</th>
-                                <th class="py-2.5 px-3">服務類型</th>
-                                <th class="py-2.5 px-3">有效起訖日期</th>
-                                <th class="py-2.5 px-3 text-center">暫停狀態</th>
-                                <th class="py-2.5 px-3 text-center">操作</th>
-                            </tr>
-                        </thead>
-                        <tbody id="unitsTbody" class="divide-y divide-slate-100">
-                            <!-- Dynamic render -->
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            <!-- SUBTAB 4: 匯出 Excel 報表 -->
-            <div id="subcontent-reports" class="subcontent hidden bg-white p-5 rounded-xl shadow-sm border border-slate-200 space-y-4">
-                <h3 class="text-sm font-bold text-slate-800 border-b border-slate-100 pb-2 flex items-center gap-2">
-                    <i class="fa-solid fa-file-excel text-emerald-600"></i> 管理者派案資料報表匯出 (Excel .xlsx)
-                </h3>
-
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div class="border border-slate-200 p-4 rounded-xl hover:border-emerald-500 transition space-y-2 bg-slate-50">
-                        <h4 class="font-bold text-xs text-slate-800">1. 所有資料原始檔 Excel</h4>
-                        <p class="text-[11px] text-slate-500">包含系統內所有一般輪派與其他派案之完整歷史資料備份。</p>
-                        <button onclick="exportExcelRaw()" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-3 py-1.5 rounded transition">
-                            <i class="fa-solid fa-download mr-1"></i> 下載原始檔 Excel
-                        </button>
-                    </div>
-
-                    <div class="border border-slate-200 p-4 rounded-xl hover:border-emerald-500 transition space-y-2 bg-slate-50">
-                        <h4 class="font-bold text-xs text-slate-800">2. 可提供服務 (派案成功) 清冊 Excel</h4>
-                        <p class="text-[11px] text-slate-500">欄位：A個管、派案日期、個案姓名、ID、區域、服務類型、單位全銜、照會時效、服務時效。</p>
-                        <button onclick="exportExcelSuccess()" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-3 py-1.5 rounded transition">
-                            <i class="fa-solid fa-download mr-1"></i> 下載派案成功清冊
-                        </button>
-                    </div>
-
-                    <div class="border border-slate-200 p-4 rounded-xl hover:border-emerald-500 transition space-y-2 bg-slate-50">
-                        <h4 class="font-bold text-xs text-slate-800">3. 未收案清冊 Excel</h4>
-                        <p class="text-[11px] text-slate-500">欄位：A個管、派案日期、個案姓名、ID、區域、服務類型、單位全銜、未收案原因。</p>
-                        <button onclick="exportExcelUnaccepted()" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-3 py-1.5 rounded transition">
-                            <i class="fa-solid fa-download mr-1"></i> 下載未收案清冊
-                        </button>
-                    </div>
-
-                    <div class="border border-slate-200 p-4 rounded-xl hover:border-emerald-500 transition space-y-2 bg-slate-50">
-                        <h4 class="font-bold text-xs text-slate-800">4. 專業服務所有個案清冊 Excel</h4>
-                        <p class="text-[11px] text-slate-500">欄位：A個管、派案日期、個案姓名、ID、區域、單位全銜、收案情形。</p>
-                        <button onclick="exportExcelSpecialty()" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-3 py-1.5 rounded transition">
-                            <i class="fa-solid fa-download mr-1"></i> 下載專業服務清冊
-                        </button>
-                    </div>
-
-                    <div class="border border-slate-200 p-4 rounded-xl hover:border-emerald-500 transition space-y-2 bg-slate-50 md:col-span-2">
-                        <h4 class="font-bold text-xs text-slate-800">5. 服務媒合所有個案清冊 Excel</h4>
-                        <p class="text-[11px] text-slate-500">欄位：A個管、派案日期、個案姓名、ID、區域、單位全銜、收案情形。</p>
-                        <button onclick="exportExcelMatching()" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-3 py-1.5 rounded transition">
-                            <i class="fa-solid fa-download mr-1"></i> 下載服務媒合清冊
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </section>
-    </main>
-
-    <!-- MODAL: ADD / EDIT B UNIT -->
-    <div id="unitModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
-        <div class="bg-white rounded-2xl max-w-2xl w-full shadow-2xl border border-slate-200 overflow-hidden">
-            <div class="bg-slate-800 text-white p-4 flex justify-between items-center">
-                <h3 class="font-bold text-sm" id="unitModalTitle">新增/編輯 B 服務單位</h3>
-                <button onclick="closeUnitModal()" class="text-white hover:text-red-300 font-bold text-lg">&times;</button>
-            </div>
-            
-            <form id="unitForm" onsubmit="saveUnitForm(event)" class="p-5 space-y-4 max-h-[80vh] overflow-y-auto custom-scrollbar">
-                <input type="hidden" id="unitFormId">
-                <div>
-                    <label class="block text-xs font-semibold text-slate-700 mb-1">服務單位全銜 *</label>
-                    <input type="text" id="unitFormName" required placeholder="例如: 凡恩居家長照機構" class="w-full border border-slate-300 rounded p-2 text-xs">
-                </div>
-
-                <div class="grid grid-cols-2 gap-3">
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-700 mb-1">起始日期</label>
-                        <input type="date" id="unitFormStartDate" class="w-full border border-slate-300 rounded p-2 text-xs">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-700 mb-1">終止日期</label>
-                        <input type="date" id="unitFormEndDate" class="w-full border border-slate-300 rounded p-2 text-xs">
-                    </div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">第二層：服務類型</label>
+                    <select id="fairFilterService" onchange="updateFairRecommendUnit()" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-xs focus:ring-2 focus:ring-brand-500 outline-none">
+                        <option value="">-- 請選擇服務類型 --</option>
+                    </select>
                 </div>
 
                 <div>
-                    <label class="block text-xs font-semibold text-slate-700 mb-1">涵蓋服務區域鄉鎮 (多選) *</label>
-                    <div id="unitFormDistrictsCheckboxes" class="grid grid-cols-3 sm:grid-cols-4 gap-1.5 bg-slate-50 p-2.5 rounded border border-slate-200 text-xs"></div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">個案姓名 *</label>
+                    <input type="text" id="fairCaseName" placeholder="輸入個案姓名" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-xs focus:ring-2 focus:ring-brand-500 outline-none">
                 </div>
 
                 <div>
-                    <label class="block text-xs font-semibold text-slate-700 mb-1">服務類型 (多選) *</label>
-                    <div id="unitFormServicesCheckboxes" class="grid grid-cols-2 sm:grid-cols-3 gap-1.5 bg-slate-50 p-2.5 rounded border border-slate-200 text-xs"></div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">個案身分證字號 (ID) *</label>
+                    <input type="text" id="fairCaseId" placeholder="例如: T123456789" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-xs focus:ring-2 focus:ring-brand-500 outline-none uppercase">
+                </div>
+            </div>
+
+            <div class="bg-emerald-50/80 border border-emerald-200 p-3.5 rounded-xl flex flex-col sm:flex-row justify-between sm:items-center gap-3">
+                <div class="flex items-center gap-3">
+                    <div class="bg-emerald-600 text-white p-2.5 rounded-lg shadow-sm">
+                        <i class="fa-solid fa-scale-balanced text-lg"></i>
+                    </div>
+                    <div>
+                        <div class="text-[11px] text-emerald-800 font-semibold uppercase">公平輪派建議第一順位單位</div>
+                        <div class="text-sm font-bold text-emerald-950 flex items-center gap-2" id="fairRecommendText">
+                            請選擇區域與類型進行比對
+                        </div>
+                    </div>
                 </div>
 
-                <div class="border-t border-slate-200 pt-3 flex justify-end gap-2">
-                    <button type="button" onclick="closeUnitModal()" class="px-4 py-2 rounded text-xs text-slate-600 hover:bg-slate-100">取消</button>
-                    <button type="submit" class="px-4 py-2 rounded text-xs font-bold text-white bg-brand-600 hover:bg-brand-700">儲存單位資料</button>
+                <button onclick="submitFairDispatch()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-4 py-2 rounded-lg text-xs shadow transition flex items-center gap-1.5 justify-center">
+                    <i class="fa-solid fa-plus-circle"></i> 新增公平輪派紀錄 (帶入建議單位)
+                </button>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+            <div class="px-5 py-3 bg-slate-50 border-b border-slate-200 flex justify-between items-center">
+                <h3 class="text-xs sm:text-sm font-bold text-slate-700 flex items-center gap-2">
+                    <i class="fa-solid fa-list-check text-brand-600"></i> 一般輪派歷史與回覆紀錄表
+                </h3>
+                <span class="text-[11px] text-slate-500">註：<span class="inline-block w-3 h-3 bg-emerald-200 border border-emerald-400 rounded-sm align-middle mr-1"></span>淺綠底色代表「尚未回覆」狀態</span>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-xs">
+                    <thead class="bg-slate-100 text-slate-700 uppercase font-semibold border-b border-slate-200">
+                        <tr>
+                            <th class="py-3 px-3">派案日期</th>
+                            <th class="py-3 px-3">A 個管</th>
+                            <th class="py-3 px-3">區域/類型</th>
+                            <th class="py-3 px-3">個案姓名 (ID)</th>
+                            <th class="py-3 px-3">輪派 B 單位全銜</th>
+                            <th class="py-3 px-3">回覆狀態</th>
+                            <th class="py-3 px-3">未收案詳細原因</th>
+                            <th class="py-3 px-3 text-center">操作/改派</th>
+                        </tr>
+                    </thead>
+                    <tbody id="fairRecordsTbody" class="divide-y divide-slate-200"></tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
+    <!-- PAGE 2: 其他派案 -->
+    <section id="page-other" class="page-content hidden space-y-6">
+        <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 space-y-4">
+            <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+                <h2 class="text-base font-bold text-slate-800 flex items-center gap-2">
+                    <i class="fa-solid fa-network-wired text-brand-600"></i> 其他派案 (家屬意願/單位開發/改派/出備派案/服務媒合)
+                </h2>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">派案類型 *</label>
+                    <select id="otherDispatchType" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-xs focus:ring-2 focus:ring-brand-500 outline-none font-semibold text-brand-800">
+                        <option value="家屬意願">家屬意願</option>
+                        <option value="單位開發">單位開發</option>
+                        <option value="改派">改派</option>
+                        <option value="出備派案">出備派案</option>
+                        <option value="服務媒合">服務媒合</option>
+                    </select>
                 </div>
-            </form>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">服務區域 (鄉鎮) *</label>
+                    <select id="otherDistrict" onchange="filterOtherUnitsDropdown()" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-xs focus:ring-2 focus:ring-brand-500 outline-none">
+                        <option value="">-- 請選擇鄉鎮區域 --</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">服務類型 *</label>
+                    <select id="otherService" onchange="filterOtherUnitsDropdown()" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-xs focus:ring-2 focus:ring-brand-500 outline-none">
+                        <option value="">-- 請選擇服務類型 --</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">指定 B 單位 (可關鍵字搜尋) *</label>
+                    <input type="text" id="otherUnitSearch" onkeyup="filterOtherUnitsDropdown()" placeholder="輸入關鍵字篩選單位..." class="w-full bg-slate-50 border border-slate-300 rounded-lg p-1.5 text-xs mb-1 outline-none">
+                    <select id="otherUnitSelect" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-xs focus:ring-2 focus:ring-brand-500 outline-none">
+                        <option value="">-- 先選擇區域與類型 --</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">個案姓名 *</label>
+                    <input type="text" id="otherCaseName" placeholder="輸入個案姓名" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-xs focus:ring-2 focus:ring-brand-500 outline-none">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">個案 ID *</label>
+                    <input type="text" id="otherCaseId" placeholder="身分證字號" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-xs focus:ring-2 focus:ring-brand-500 outline-none uppercase">
+                </div>
+
+                <div class="md:col-span-2 flex items-end">
+                    <button onclick="submitOtherDispatch()" class="w-full bg-brand-600 hover:bg-brand-700 text-white font-bold py-2 rounded-lg text-xs shadow transition flex items-center justify-center gap-1.5">
+                        <i class="fa-solid fa-paper-plane"></i> 送出其他派案紀錄
+                    </button>
+                </div>
+            </div>
         </div>
-    </div>
 
-    <!-- MODAL: PAUSE / RESUME UNIT -->
-    <div id="pauseModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
-        <div class="bg-white rounded-xl max-w-md w-full shadow-2xl p-5 space-y-4">
-            <h3 class="font-bold text-sm text-slate-800">設定 B 單位暫停/恢復派案</h3>
-            <input type="hidden" id="pauseUnitId">
-            <div>
-                <label class="block text-xs text-slate-600 mb-1">單位名稱</label>
-                <input type="text" id="pauseUnitName" readonly class="w-full bg-slate-100 border border-slate-300 rounded p-2 text-xs font-bold">
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+            <div class="px-5 py-3 bg-slate-50 border-b border-slate-200 flex justify-between items-center">
+                <h3 class="text-xs sm:text-sm font-bold text-slate-700 flex items-center gap-2">
+                    <i class="fa-solid fa-list-check text-brand-600"></i> 其他派案歷史紀錄清冊
+                </h3>
             </div>
-            <div>
-                <label class="block text-xs text-slate-600 mb-1">狀態開關</label>
-                <select id="pauseStatusSelect" class="w-full border border-slate-300 rounded p-2 text-xs font-semibold">
-                    <option value="NORMAL">正常服務中 (恢復派案)</option>
-                    <option value="PAUSED">暫停派案中</option>
-                </select>
-            </div>
-            <div>
-                <label class="block text-xs text-slate-600 mb-1">暫停原因 / 說明</label>
-                <input type="text" id="pauseReasonInput" placeholder="例如: 人力調整暫停接案" class="w-full border border-slate-300 rounded p-2 text-xs">
-            </div>
-            <div class="flex justify-end gap-2 pt-2">
-                <button onclick="closePauseModal()" class="px-3 py-1.5 text-xs text-slate-600">取消</button>
-                <button onclick="savePauseState()" class="px-4 py-1.5 text-xs font-bold bg-brand-600 text-white rounded">儲存狀態</button>
+
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-xs">
+                    <thead class="bg-slate-100 text-slate-700 uppercase font-semibold border-b border-slate-200">
+                        <tr>
+                            <th class="py-3 px-3">派案日期</th>
+                            <th class="py-3 px-3">A 個管</th>
+                            <th class="py-3 px-3">派案類型</th>
+                            <th class="py-3 px-3">區域/類型</th>
+                            <th class="py-3 px-3">個案姓名 (ID)</th>
+                            <th class="py-3 px-3">指定 B 單位全銜</th>
+                            <th class="py-3 px-3">回覆狀態</th>
+                            <th class="py-3 px-3">未收案原因</th>
+                            <th class="py-3 px-3 text-center">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="otherRecordsTbody" class="divide-y divide-slate-200"></tbody>
+                </table>
             </div>
         </div>
-    </div>
+    </section>
 
-    <!-- TOAST NOTIFICATION -->
-    <div id="toast" class="fixed bottom-5 right-5 bg-slate-800 text-white text-xs px-4 py-3 rounded-xl shadow-2xl z-50 hidden transition-all flex items-center gap-2 border border-slate-700">
-        <i id="toastIcon" class="fa-solid fa-circle-check text-emerald-400"></i>
-        <span id="toastMsg">系統提示訊息</span>
-    </div>
+    <!-- PAGE 3: 時效與成功統計 -->
+    <section id="page-kpi" class="page-content hidden space-y-6">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
+                <div>
+                    <div class="text-xs text-slate-500 font-semibold">派案成功案件數</div>
+                    <div class="text-2xl font-bold text-slate-800" id="kpiSuccessCount">0</div>
+                </div>
+                <div class="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center text-xl">
+                    <i class="fa-solid fa-circle-check"></i>
+                </div>
+            </div>
 
-    <!-- SCRIPT APPLICATION LOGIC -->
-    <script>
-        // --- CONSTANTS ---
-        const DISTRICTS = ["屏東市", "萬丹鄉", "長治鄉", "麟洛鄉", "九如鄉", "里港鄉", "鹽埔鄉", "高樹鄉", "萬巒鄉", "竹田鄉", "潮州鎮", "內埔鄉"];
+            <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
+                <div>
+                    <div class="text-xs text-slate-500 font-semibold">平均照會時效 (工作天)</div>
+                    <div class="text-2xl font-bold text-brand-700" id="kpiAvgReferral">0.0 天</div>
+                    <div class="text-[10px] text-slate-400">指標限制：≦ 2 工作天</div>
+                </div>
+                <div class="w-12 h-12 bg-brand-50 text-brand-600 rounded-full flex items-center justify-center text-xl">
+                    <i class="fa-solid fa-stopwatch"></i>
+                </div>
+            </div>
+
+            <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
+                <div>
+                    <div class="text-xs text-slate-500 font-semibold">平均服務時效 (工作天)</div>
+                    <div class="text-2xl font-bold text-indigo-700" id="kpiAvgService">0.0 天</div>
+                    <div class="text-[10px] text-slate-400">特定6大類指標：≦ 5 工作天</div>
+                </div>
+                <div class="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center text-xl">
+                    <i class="fa-solid fa-truck-medical"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden space-y-3 p-5">
+            <div class="flex flex-col sm:flex-row justify-between sm:items-center gap-2 border-b border-slate-100 pb-3">
+                <div>
+                    <h3 class="text-base font-bold text-slate-800 flex items-center gap-2">
+                        <i class="fa-solid fa-clock-rotate-left text-brand-600"></i> 派案成功案件時效追蹤與登錄
+                    </h3>
+                    <p class="text-xs text-slate-500">時效計算已自動排除星期六、星期日及【系統設定之放假日】。</p>
+                </div>
+
+                <div class="flex items-center gap-2">
+                    <label class="text-xs font-semibold text-slate-600">依月份篩選:</label>
+                    <input type="month" id="kpiMonthFilter" onchange="renderKpiTable()" class="bg-slate-50 border border-slate-300 rounded p-1 text-xs">
+                </div>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-xs">
+                    <thead class="bg-slate-100 text-slate-700 uppercase font-semibold border-b border-slate-200">
+                        <tr>
+                            <th class="py-3 px-3">派案日期</th>
+                            <th class="py-3 px-3">個案姓名 (ID)</th>
+                            <th class="py-3 px-3">服務項目</th>
+                            <th class="py-3 px-3">B 單位全銜</th>
+                            <th class="py-3 px-3">1. 計畫通過日</th>
+                            <th class="py-3 px-3">2. 照會日</th>
+                            <th class="py-3 px-3">3. 第一次服務日</th>
+                            <th class="py-3 px-3 text-center">照會時效(天)</th>
+                            <th class="py-3 px-3 text-center">服務時效(天)</th>
+                            <th class="py-3 px-3">超時原因備註</th>
+                        </tr>
+                    </thead>
+                    <tbody id="kpiTableTbody" class="divide-y divide-slate-200"></tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
+    <!-- PAGE 4: 系統設定與權限管理 -->
+    <section id="page-settings" class="page-content hidden space-y-6">
+        <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-wrap gap-2">
+            <button onclick="switchSettingsSubtab('holidays')" id="subtab-holidays" class="subtab-btn active px-3 py-1.5 rounded-lg text-xs font-bold bg-brand-600 text-white">
+                <i class="fa-solid fa-calendar-day mr-1"></i> 放假日設定
+            </button>
+            <button onclick="switchSettingsSubtab('users')" id="subtab-users" class="subtab-btn px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-100 text-slate-600 hover:bg-slate-200">
+                <i class="fa-solid fa-users-gear mr-1"></i> 帳號與輔助管理權限
+            </button>
+            <button onclick="switchSettingsSubtab('units')" id="subtab-units" class="subtab-btn px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-100 text-slate-600 hover:bg-slate-200">
+                <i class="fa-solid fa-building-user mr-1"></i> B 單位維護 (一口氣展開全數299家)
+            </button>
+            <button onclick="switchSettingsSubtab('reports')" id="subtab-reports" class="subtab-btn px-3 py-1.5 rounded-lg text-xs font-bold bg-emerald-600 text-white hover:bg-emerald-700 ml-auto">
+                <i class="fa-solid fa-file-excel mr-1"></i> 匯出 Excel 報表
+            </button>
+        </div>
+
+        <!-- SUBTAB 1: 放假日設定 -->
+        <div id="subcontent-holidays" class="subcontent bg-white p-5 rounded-xl shadow-sm border border-slate-200 space-y-4">
+            <h3 class="text-sm font-bold text-slate-800 border-b border-slate-100 pb-2">手動新增放假日 (如颱風假)</h3>
+            <div class="flex flex-wrap items-end gap-3 bg-slate-50 p-3 rounded-lg border border-slate-200">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">日期</label>
+                    <input type="date" id="holidayDate" class="bg-white border border-slate-300 rounded p-2 text-xs">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">假別/說明</label>
+                    <input type="text" id="holidayName" placeholder="例如: 颱風假" class="bg-white border border-slate-300 rounded p-2 text-xs w-48">
+                </div>
+                <button onclick="addHoliday()" class="bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold px-4 py-2 rounded-lg transition">新增放假日</button>
+            </div>
+            <div class="overflow-x-auto border border-slate-200 rounded-lg max-w-xl">
+                <table class="w-full text-left text-xs">
+                    <thead class="bg-slate-100 font-semibold border-b border-slate-200">
+                        <tr><th class="py-2 px-3">日期</th><th class="py-2 px-3">假別名稱</th><th class="py-2 px-3 text-center">操作</th></tr>
+                    </thead>
+                    <tbody id="holidaysTbody" class="divide-y divide-slate-100"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- SUBTAB 2: 帳號與權限設定 -->
+        <div id="subcontent-users" class="subcontent hidden bg-white p-5 rounded-xl shadow-sm border border-slate-200 space-y-4">
+            <h3 class="text-sm font-bold text-slate-800 border-b border-slate-100 pb-2">A個管帳號與輔助管理權限設定</h3>
+            <div class="flex flex-wrap items-end gap-3 bg-slate-50 p-3 rounded-lg border border-slate-200">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">個管職編 *</label>
+                    <input type="text" id="userFormId" placeholder="如: A003" class="bg-white border border-slate-300 rounded p-2 text-xs uppercase">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">個管姓名 *</label>
+                    <input type="text" id="userFormName" placeholder="如: 張個管" class="bg-white border border-slate-300 rounded p-2 text-xs">
+                </div>
+                <div class="flex items-center gap-1 pb-2">
+                    <input type="checkbox" id="userFormIsAssistant" class="rounded text-brand-600">
+                    <label for="userFormIsAssistant" class="text-xs font-semibold text-slate-700">輔助管理權限</label>
+                </div>
+                <button onclick="saveUserAccount()" class="bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold px-4 py-2 rounded-lg transition">儲存帳號</button>
+            </div>
+            <div class="overflow-x-auto border border-slate-200 rounded-lg max-w-2xl">
+                <table class="w-full text-left text-xs">
+                    <thead class="bg-slate-100 font-semibold border-b border-slate-200">
+                        <tr><th class="py-2 px-3">職編</th><th class="py-2 px-3">姓名</th><th class="py-2 px-3">權限</th><th class="py-2 px-3 text-center">開關</th><th class="py-2 px-3 text-center">操作</th></tr>
+                    </thead>
+                    <tbody id="usersTbody" class="divide-y divide-slate-100"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- SUBTAB 3: B 單位維護 (全新：即時篩選器 + 展開全部 299 家) -->
+        <div id="subcontent-units" class="subcontent hidden bg-white p-5 rounded-xl shadow-sm border border-slate-200 space-y-4">
+            <div class="flex flex-col md:flex-row justify-between md:items-center gap-3 border-b border-slate-100 pb-3">
+                <div>
+                    <h3 class="text-sm font-bold text-slate-800">B 服務單位資料庫維護 (一口氣展開全數單位)</h3>
+                    <span id="unitCountBadge" class="text-xs bg-brand-100 text-brand-800 font-semibold px-2.5 py-0.5 rounded-full mt-1 inline-block">顯示中：299 / 299 家</span>
+                </div>
+                <button onclick="openAddUnitModal()" class="bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold px-3 py-2 rounded-lg shadow-sm">
+                    <i class="fa-solid fa-plus mr-1"></i> 手動新增 B 單位
+                </button>
+            </div>
+
+            <!-- 即時多重篩選器 -->
+            <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2.5 text-xs">
+                <div>
+                    <label class="block font-semibold text-slate-600 mb-1"><i class="fa-solid fa-magnifying-glass mr-1"></i>關鍵字搜尋</label>
+                    <input type="text" id="unitSearchKw" onkeyup="renderUnitsTable()" placeholder="搜尋單位全銜..." class="w-full bg-white border border-slate-300 rounded p-2 outline-none">
+                </div>
+                <div>
+                    <label class="block font-semibold text-slate-600 mb-1"><i class="fa-solid fa-location-dot mr-1"></i>鄉鎮區域篩選</label>
+                    <select id="unitSearchDistrict" onchange="renderUnitsTable()" class="w-full bg-white border border-slate-300 rounded p-2 outline-none">
+                        <option value="">全部 12 鄉鎮</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block font-semibold text-slate-600 mb-1"><i class="fa-solid fa-hand-holding-medical mr-1"></i>服務類型篩選</label>
+                    <select id="unitSearchService" onchange="renderUnitsTable()" class="w-full bg-white border border-slate-300 rounded p-2 outline-none">
+                        <option value="">全部 17 種服務類別</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block font-semibold text-slate-600 mb-1"><i class="fa-solid fa-toggle-on mr-1"></i>派案狀態篩選</label>
+                    <select id="unitSearchStatus" onchange="renderUnitsTable()" class="w-full bg-white border border-slate-300 rounded p-2 outline-none">
+                        <option value="">全部狀態</option>
+                        <option value="NORMAL">正常服務中</option>
+                        <option value="PAUSED">暫停派案中</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- 全展開表格（無分頁限制） -->
+            <div class="overflow-x-auto border border-slate-200 rounded-lg">
+                <table class="w-full text-left text-xs">
+                    <thead class="bg-slate-100 font-semibold border-b border-slate-200 text-slate-700">
+                        <tr>
+                            <th class="py-2.5 px-3">單位全銜</th>
+                            <th class="py-2.5 px-3">涵蓋區域鄉鎮</th>
+                            <th class="py-2.5 px-3">服務類型</th>
+                            <th class="py-2.5 px-3">有效起訖日期</th>
+                            <th class="py-2.5 px-3 text-center">暫停狀態</th>
+                            <th class="py-2.5 px-3 text-center">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="unitsTbody" class="divide-y divide-slate-100"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- SUBTAB 4: 匯出 Excel 報表 -->
+        <div id="subcontent-reports" class="subcontent hidden bg-white p-5 rounded-xl shadow-sm border border-slate-200 space-y-4">
+            <h3 class="text-sm font-bold text-slate-800 border-b border-slate-100 pb-2 flex items-center gap-2">
+                <i class="fa-solid fa-file-excel text-emerald-600"></i> 管理者派案資料報表匯出 (Excel .xlsx)
+            </h3>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="border border-slate-200 p-4 rounded-xl space-y-2 bg-slate-50">
+                    <h4 class="font-bold text-xs text-slate-800">1. 所有資料原始檔 Excel</h4>
+                    <p class="text-[11px] text-slate-500">包含系統內所有一般輪派與其他派案之完整歷史資料。</p>
+                    <button onclick="exportExcelRaw()" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-3 py-1.5 rounded transition">下載原始檔 Excel</button>
+                </div>
+
+                <div class="border border-slate-200 p-4 rounded-xl space-y-2 bg-slate-50">
+                    <h4 class="font-bold text-xs text-slate-800">2. 可提供服務 (派案成功) 清冊 Excel</h4>
+                    <p class="text-[11px] text-slate-500">欄位：A個管、派案日期、個案姓名、ID、區域、服務類型、單位全銜、照會時效、服務時效。</p>
+                    <button onclick="exportExcelSuccess()" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-3 py-1.5 rounded transition">下載派案成功清冊</button>
+                </div>
+
+                <div class="border border-slate-200 p-4 rounded-xl space-y-2 bg-slate-50">
+                    <h4 class="font-bold text-xs text-slate-800">3. 未收案清冊 Excel</h4>
+                    <p class="text-[11px] text-slate-500">欄位：A個管、派案日期、個案姓名、ID、區域、服務類型、單位全銜、未收案原因。</p>
+                    <button onclick="exportExcelUnaccepted()" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-3 py-1.5 rounded transition">下載未收案清冊</button>
+                </div>
+
+                <div class="border border-slate-200 p-4 rounded-xl space-y-2 bg-slate-50">
+                    <h4 class="font-bold text-xs text-slate-800">4. 專業服務所有個案清冊 Excel</h4>
+                    <p class="text-[11px] text-slate-500">欄位：A個管、派案日期、個案姓名、ID、區域、單位全銜、收案情形。</p>
+                    <button onclick="exportExcelSpecialty()" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-3 py-1.5 rounded transition">下載專業服務清冊</button>
+                </div>
+
+                <div class="border border-slate-200 p-4 rounded-xl space-y-2 bg-slate-50 md:col-span-2">
+                    <h4 class="font-bold text-xs text-slate-800">5. 服務媒合所有個案清冊 Excel</h4>
+                    <p class="text-[11px] text-slate-500">欄位：A個管、派案日期、個案姓名、ID、區域、單位全銜、收案情形。</p>
+                    <button onclick="exportExcelMatching()" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-3 py-1.5 rounded transition">下載服務媒合清冊</button>
+                </div>
+            </div>
+        </div>
+    </section>
+</main>
+
+<!-- MODAL: ADD / EDIT B UNIT -->
+<div id="unitModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-2xl w-full shadow-2xl border border-slate-200 overflow-hidden">
+        <div class="bg-slate-800 text-white p-4 flex justify-between items-center">
+            <h3 class="font-bold text-sm" id="unitModalTitle">新增/編輯 B 服務單位</h3>
+            <button onclick="closeUnitModal()" class="text-white hover:text-red-300 font-bold text-lg">&times;</button>
+        </div>
         
-        const SERVICES = [
-            "居家服務", "到宅沐浴", "日間照顧", "家庭托顧", "專業服務", 
-            "居家喘息", "日照喘息", "機構喘息", "小規機喘息", "巷弄喘息", 
-            "餐飲服務", "失智共照", "失智據點", "家照者支持", "團體家屋", 
-            "交通接送", "BD03"
-        ];
+        <form id="unitForm" onsubmit="saveUnitForm(event)" class="p-5 space-y-4 max-h-[80vh] overflow-y-auto custom-scrollbar">
+            <input type="hidden" id="unitFormId">
+            <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">服務單位全銜 *</label>
+                <input type="text" id="unitFormName" required placeholder="例如: 凡恩居家長照機構" class="w-full border border-slate-300 rounded p-2 text-xs">
+            </div>
 
-        const UNACCEPTED_REASONS = [
-            "有人力但時間無法配合", "該區無人力", "需特殊資格人員", 
-            "要求女性", "要求男性", "要求客語", "要求台語", "要求族語", 
-            "無CA07", "無CA08", "無CB01a", "無CB02", "無CB03", "無CB04", "無CD02", "無CC01", "其他(自填)"
-        ];
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">起始日期</label>
+                    <input type="date" id="unitFormStartDate" class="w-full border border-slate-300 rounded p-2 text-xs">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">終止日期</label>
+                    <input type="date" id="unitFormEndDate" class="w-full border border-slate-300 rounded p-2 text-xs">
+                </div>
+            </div>
 
-        const SPECIAL_TIMEOVER_SERVICES = ["居家服務", "日間照顧", "家庭托顧", "專業服務", "到宅沐浴", "BD03"];
+            <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">涵蓋服務區域鄉鎮 (多選) *</label>
+                <div id="unitFormDistrictsCheckboxes" class="grid grid-cols-3 sm:grid-cols-4 gap-1.5 bg-slate-50 p-2.5 rounded border border-slate-200 text-xs"></div>
+            </div>
 
-        // Preloaded Initial 299 B units in Pingtung
-        const PRELOAD_UNITS = Array.from({ length: 299 }, (_, i) => {
-            const unitIndex = i + 1;
-            const distIndex = i % DISTRICTS.length;
-            const servIndex = i % SERVICES.length;
-            return {
-                id: "U" + String(unitIndex).padStart(3, '0'),
-                name: `屏東第 ${unitIndex} 號長照B單位`,
-                districts: [DISTRICTS[distIndex], DISTRICTS[(distIndex + 1) % DISTRICTS.length]],
-                services: [SERVICES[servIndex], SERVICES[(servIndex + 2) % SERVICES.length]],
-                startDate: "2026-01-01",
-                endDate: "2026-12-31",
-                isPaused: false,
-                pauseReason: ""
-            };
-        });
+            <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">服務類型 (多選) *</label>
+                <div id="unitFormServicesCheckboxes" class="grid grid-cols-2 sm:grid-cols-3 gap-1.5 bg-slate-50 p-2.5 rounded border border-slate-200 text-xs"></div>
+            </div>
 
-        const PRELOAD_USERS = [
-            { id: "06190", name: "管理者", isAssistant: true },
-            { id: "A001", name: "陳個管", isAssistant: true },
-            { id: "A002", name: "林個管", isAssistant: false }
-        ];
+            <div class="border-t border-slate-200 pt-3 flex justify-end gap-2">
+                <button type="button" onclick="closeUnitModal()" class="px-4 py-2 rounded text-xs text-slate-600 hover:bg-slate-100">取消</button>
+                <button type="submit" class="px-4 py-2 rounded text-xs font-bold text-white bg-brand-600 hover:bg-brand-700">儲存單位資料</button>
+            </div>
+        </form>
+    </div>
+</div>
 
-        const PRELOAD_HOLIDAYS = [
-            { date: "2026-01-01", name: "元旦" },
-            { date: "2026-02-16", name: "農曆春節" }
-        ];
+<!-- MODAL: PAUSE / RESUME UNIT -->
+<div id="pauseModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-xl max-w-md w-full shadow-2xl p-5 space-y-4">
+        <h3 class="font-bold text-sm text-slate-800">設定 B 單位暫停/恢復派案</h3>
+        <input type="hidden" id="pauseUnitId">
+        <div>
+            <label class="block text-xs text-slate-600 mb-1">單位名稱</label>
+            <input type="text" id="pauseUnitName" readonly class="w-full bg-slate-100 border border-slate-300 rounded p-2 text-xs font-bold">
+        </div>
+        <div>
+            <label class="block text-xs text-slate-600 mb-1">狀態開關</label>
+            <select id="pauseStatusSelect" class="w-full border border-slate-300 rounded p-2 text-xs font-semibold">
+                <option value="NORMAL">正常服務中 (恢復派案)</option>
+                <option value="PAUSED">暫停派案中</option>
+            </select>
+        </div>
+        <div>
+            <label class="block text-xs text-slate-600 mb-1">暫停原因 / 說明</label>
+            <input type="text" id="pauseReasonInput" placeholder="例如: 人力調整暫停接案" class="w-full border border-slate-300 rounded p-2 text-xs">
+        </div>
+        <div class="flex justify-end gap-2 pt-2">
+            <button onclick="closePauseModal()" class="px-3 py-1.5 text-xs text-slate-600">取消</button>
+            <button onclick="savePauseState()" class="px-4 py-1.5 text-xs font-bold bg-brand-600 text-white rounded">儲存狀態</button>
+        </div>
+    </div>
+</div>
 
-        // --- GLOBAL APP STATE ---
-        let currentUser = null; // { id, name, role: 'CASE_MANAGER'|'ADMIN', isAssistant: boolean }
-        let unitsData = [];
-        let usersData = [];
-        let holidaysData = [];
-        let fairRecordsData = [];
-        let otherRecordsData = [];
+<!-- TOAST NOTIFICATION -->
+<div id="toast" class="fixed bottom-5 right-5 bg-slate-800 text-white text-xs px-4 py-3 rounded-xl shadow-2xl z-50 hidden transition-all flex items-center gap-2 border border-slate-700">
+    <i id="toastIcon" class="fa-solid fa-circle-check text-emerald-400"></i>
+    <span id="toastMsg">系統提示訊息</span>
+</div>
 
-        // --- INIT APP ---
-        document.addEventListener("DOMContentLoaded", () => {
+<script>
+    const DISTRICTS = ["屏東市", "萬丹鄉", "長治鄉", "麟洛鄉", "九如鄉", "里港鄉", "鹽埔鄉", "高樹鄉", "萬巒鄉", "竹田鄉", "潮州鎮", "內埔鄉"];
+    const SERVICES = [
+        "居家服務", "到宅沐浴", "日間照顧", "家庭托顧", "專業服務", 
+        "居家喘息", "日照喘息", "機構喘息", "小規機喘息", "巷弄喘息", 
+        "餐飲服務", "失智共照", "失智據點", "家照者支持", "團體家屋", 
+        "交通接送", "BD03"
+    ];
+    const UNACCEPTED_REASONS = [
+        "有人力但時間無法配合", "該區無人力", "需特殊資格人員", 
+        "要求女性", "要求男性", "要求客語", "要求台語", "要求族語", 
+        "無CA07", "無CA08", "無CB01a", "無CB02", "無CB03", "無CB04", "無CD02", "無CC01", "其他(自填)"
+    ];
+    const SPECIAL_TIMEOVER_SERVICES = ["居家服務", "日間照顧", "家庭托顧", "專業服務", "到宅沐浴", "BD03"];
+
+    // 完整 299 家資料庫預載
+    const PRELOAD_UNITS = Array.from({ length: 299 }, (_, i) => {
+        const unitIndex = i + 1;
+        const distIndex = i % DISTRICTS.length;
+        const servIndex = i % SERVICES.length;
+        return {
+            id: "U" + String(unitIndex).padStart(3, '0'),
+            name: `屏東第 ${unitIndex} 號長照B單位`,
+            districts: [DISTRICTS[distIndex], DISTRICTS[(distIndex + 1) % DISTRICTS.length]],
+            services: [SERVICES[servIndex], SERVICES[(servIndex + 2) % SERVICES.length]],
+            startDate: "2026-01-01",
+            endDate: "2026-12-31",
+            isPaused: false,
+            pauseReason: ""
+        };
+    });
+
+    const PRELOAD_USERS = [
+        { id: "06190", name: "管理者", isAssistant: true },
+        { id: "A001", name: "陳個管", isAssistant: true },
+        { id: "A002", name: "林個管", isAssistant: false }
+    ];
+    const PRELOAD_HOLIDAYS = [{ date: "2026-01-01", name: "元旦" }];
+
+    let currentUser = null;
+    let unitsData = [];
+    let usersData = [];
+    let holidaysData = [];
+    let fairRecordsData = [];
+    let otherRecordsData = [];
+
+    document.addEventListener("DOMContentLoaded", () => {
+        initStorageData();
+        setupDropdowns();
+        renderHolidaysTable();
+        renderUsersTable();
+        renderUnitsTable();
+        renderFairRecordsTable();
+        renderOtherRecordsTable();
+        renderKpiTable();
+    });
+
+    function initStorageData() {
+        unitsData = JSON.parse(localStorage.getItem("pt_app_units_v2")) || PRELOAD_UNITS;
+        usersData = JSON.parse(localStorage.getItem("pt_app_users")) || PRELOAD_USERS;
+        holidaysData = JSON.parse(localStorage.getItem("pt_app_holidays")) || PRELOAD_HOLIDAYS;
+        fairRecordsData = JSON.parse(localStorage.getItem("pt_app_fair_records")) || [];
+        otherRecordsData = JSON.parse(localStorage.getItem("pt_app_other_records")) || [];
+        saveAllToStorage();
+    }
+
+    function saveAllToStorage() {
+        localStorage.setItem("pt_app_units_v2", JSON.stringify(unitsData));
+        localStorage.setItem("pt_app_users", JSON.stringify(usersData));
+        localStorage.setItem("pt_app_holidays", JSON.stringify(holidaysData));
+        localStorage.setItem("pt_app_fair_records", JSON.stringify(fairRecordsData));
+        localStorage.setItem("pt_app_other_records", JSON.stringify(otherRecordsData));
+    }
+
+    function resetDataToDefault() {
+        if (confirm("確定重置所有資料為預設狀態？")) {
+            localStorage.clear();
             initStorageData();
-            setupDropdowns();
-            renderHolidaysTable();
-            renderUsersTable();
-            renderUnitsTable();
-            renderFairRecordsTable();
-            renderOtherRecordsTable();
-            renderKpiTable();
+            location.reload();
+        }
+    }
+
+    function toggleLoginInputHint() {
+        const role = document.getElementById("loginRole").value;
+        const label = document.getElementById("loginIdLabel");
+        const hint = document.getElementById("loginHint");
+        if (role === "ADMIN") {
+            label.textContent = "管理者職編 或 輔助管理者職編";
+            hint.textContent = "預設管理者職編: 06190";
+        } else {
+            label.textContent = "個管職務編號 (職編)";
+            hint.textContent = "請輸入您的個管職編登入 (例如: A001)";
+        }
+    }
+
+    function handleLogin(e) {
+        e.preventDefault();
+        const role = document.getElementById("loginRole").value;
+        const inputVal = document.getElementById("loginIdInput").value.trim().toUpperCase();
+        if (!inputVal) return showToast("請輸入職編登入", "error");
+
+        if (role === "ADMIN") {
+            if (inputVal === "06190") {
+                currentUser = { id: "06190", name: "系統管理者", role: "ADMIN", isAssistant: true };
+            } else {
+                const u = usersData.find(x => x.id.toUpperCase() === inputVal && x.isAssistant);
+                if (u) currentUser = { id: u.id, name: u.name, role: "ADMIN", isAssistant: true };
+                else return showToast("無管理者權限或職編錯誤", "error");
+            }
+        } else {
+            const u = usersData.find(x => x.id.toUpperCase() === inputVal);
+            if (u) currentUser = { id: u.id, name: u.name, role: "CASE_MANAGER", isAssistant: !!u.isAssistant };
+            else {
+                currentUser = { id: inputVal, name: `個管師 ${inputVal}`, role: "CASE_MANAGER", isAssistant: false };
+                usersData.push({ id: inputVal, name: `個管師 ${inputVal}`, isAssistant: false });
+                saveAllToStorage();
+                renderUsersTable();
+            }
+        }
+
+        document.getElementById("loginModal").classList.add("hidden");
+        document.getElementById("headerUserName").textContent = currentUser.name;
+        document.getElementById("headerUserId").textContent = `(${currentUser.id})`;
+        document.getElementById("headerRoleBadge").textContent = currentUser.role === "ADMIN" ? "管理者" : "A個管";
+        showToast(`歡迎登入！${currentUser.name}`, "success");
+        updateFairRecommendUnit();
+        filterOtherUnitsDropdown();
+    }
+
+    function handleLogout() {
+        currentUser = null;
+        document.getElementById("loginModal").classList.remove("hidden");
+    }
+
+    function switchTab(tabKey) {
+        if (tabKey === 'settings' && !(currentUser && (currentUser.role === 'ADMIN' || currentUser.isAssistant))) {
+            return showToast("只有管理者或輔助管理者可存取設定功能！", "error");
+        }
+        document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active", "bg-brand-50", "text-brand-700", "border", "border-brand-200"));
+        document.querySelectorAll(".page-content").forEach(p => p.classList.add("hidden"));
+        document.getElementById(`tab-${tabKey}`).classList.add("active", "bg-brand-50", "text-brand-700", "border", "border-brand-200");
+        document.getElementById(`page-${tabKey}`).classList.remove("hidden");
+    }
+
+    function switchSettingsSubtab(subKey) {
+        document.querySelectorAll(".subtab-btn").forEach(b => { b.classList.remove("bg-brand-600", "text-white"); b.classList.add("bg-slate-100", "text-slate-600"); });
+        document.querySelectorAll(".subcontent").forEach(c => c.classList.add("hidden"));
+        const activeSub = document.getElementById(`subtab-${subKey}`);
+        if (activeSub) { activeSub.classList.add("bg-brand-600", "text-white"); activeSub.classList.remove("bg-slate-100", "text-slate-600"); }
+        document.getElementById(`subcontent-${subKey}`).classList.remove("hidden");
+    }
+
+    function setupDropdowns() {
+        ["fairFilterDistrict", "otherDistrict", "unitSearchDistrict"].forEach(id => {
+            const el = document.getElementById(id);
+            DISTRICTS.forEach(d => el.appendChild(new Option(d, d)));
         });
 
-        function initStorageData() {
-            unitsData = JSON.parse(localStorage.getItem("pt_app_units")) || PRELOAD_UNITS;
-            usersData = JSON.parse(localStorage.getItem("pt_app_users")) || PRELOAD_USERS;
-            holidaysData = JSON.parse(localStorage.getItem("pt_app_holidays")) || PRELOAD_HOLIDAYS;
-            fairRecordsData = JSON.parse(localStorage.getItem("pt_app_fair_records")) || [];
-            otherRecordsData = JSON.parse(localStorage.getItem("pt_app_other_records")) || [];
-            saveAllToStorage();
+        ["fairFilterService", "otherService", "unitSearchService"].forEach(id => {
+            const el = document.getElementById(id);
+            SERVICES.forEach(s => el.appendChild(new Option(s, s)));
+        });
+    }
+
+    // 公平輪派核心
+    function getFairEligibleUnits(district, service) {
+        const today = new Date().toISOString().split("T")[0];
+        return unitsData.filter(u => {
+            if (u.isPaused) return false;
+            if (u.startDate && u.startDate > today) return false;
+            if (u.endDate && u.endDate < today) return false;
+            return u.districts.includes(district) && u.services.includes(service);
+        }).sort((a, b) => {
+            const countA = countUnitDispatches(a.name, service);
+            const countB = countUnitDispatches(b.name, service);
+            if (countA !== countB) return countA - countB;
+            const lastA = getLastDispatchTime(a.name, service);
+            const lastB = getLastDispatchTime(b.name, service);
+            if (lastA !== lastB) return lastA.localeCompare(lastB);
+            return a.name.localeCompare(b.name);
+        });
+    }
+
+    function countUnitDispatches(unitName, service) {
+        return fairRecordsData.filter(r => r.unitName === unitName && r.service === service && r.status !== "未收案").length +
+               otherRecordsData.filter(r => r.unitName === unitName && r.service === service && r.status !== "未收案").length;
+    }
+
+    function getLastDispatchTime(unitName, service) {
+        const all = [...fairRecordsData, ...otherRecordsData].filter(r => r.unitName === unitName && r.service === service);
+        if (all.length === 0) return "0000-00-00";
+        all.sort((a,b) => b.dispatchDate.localeCompare(a.dispatchDate));
+        return all[0].dispatchDate;
+    }
+
+    function updateFairRecommendUnit() {
+        const dist = document.getElementById("fairFilterDistrict").value;
+        const serv = document.getElementById("fairFilterService").value;
+        const textEl = document.getElementById("fairRecommendText");
+        if (!dist || !serv) { textEl.innerHTML = `<span class="text-slate-400">請選擇鄉鎮與服務類型</span>`; return; }
+        const eligible = getFairEligibleUnits(dist, serv);
+        if (eligible.length === 0) {
+            textEl.innerHTML = `<span class="text-red-500">此區域與類型目前無可用 B 單位</span>`;
+        } else {
+            const top = eligible[0];
+            const count = countUnitDispatches(top.name, serv);
+            textEl.innerHTML = `${top.name} <span class="text-xs bg-emerald-200 text-emerald-900 px-2 py-0.5 rounded-full font-normal">已累積派案 ${count} 次</span>`;
         }
+    }
 
-        function saveAllToStorage() {
-            localStorage.setItem("pt_app_units", JSON.stringify(unitsData));
-            localStorage.setItem("pt_app_users", JSON.stringify(usersData));
-            localStorage.setItem("pt_app_holidays", JSON.stringify(holidaysData));
-            localStorage.setItem("pt_app_fair_records", JSON.stringify(fairRecordsData));
-            localStorage.setItem("pt_app_other_records", JSON.stringify(otherRecordsData));
+    function submitFairDispatch() {
+        if (!currentUser) return showToast("請先登入！", "error");
+        const dist = document.getElementById("fairFilterDistrict").value;
+        const serv = document.getElementById("fairFilterService").value;
+        const caseName = document.getElementById("fairCaseName").value.trim();
+        const caseId = document.getElementById("fairCaseId").value.trim().toUpperCase();
+
+        if (!dist || !serv || !caseName || !caseId) return showToast("請完整填寫區域、類型、個案姓名與 ID！", "error");
+
+        const eligible = getFairEligibleUnits(dist, serv);
+        if (eligible.length === 0) return showToast("該區目前無符合資格的 B 單位！", "error");
+
+        const assignedUnit = eligible[0];
+        fairRecordsData.unshift({
+            id: "F" + Date.now(), dispatchDate: new Date().toISOString().split("T")[0],
+            managerId: currentUser.id, managerName: currentUser.name, district: dist, service: serv,
+            caseName, caseId, unitName: assignedUnit.name, status: "PENDING", unacceptedReason: "",
+            passDate: "", referralDate: "", firstServiceDate: ""
+        });
+        saveAllToStorage();
+        renderFairRecordsTable();
+        renderKpiTable();
+        updateFairRecommendUnit();
+        document.getElementById("fairCaseName").value = "";
+        document.getElementById("fairCaseId").value = "";
+        showToast(`已成功公平帶入 [${assignedUnit.name}]`, "success");
+    }
+
+    function renderFairRecordsTable() {
+        const tbody = document.getElementById("fairRecordsTbody");
+        tbody.innerHTML = "";
+        if (fairRecordsData.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="8" class="text-center py-6 text-slate-400">目前尚無一般輪派紀錄</td></tr>`;
+            return;
         }
-
-        function resetDataToDefault() {
-            if (confirm("確定重置所有資料為預設狀態？測試資料將恢復最初。")) {
-                localStorage.clear();
-                initStorageData();
-                location.reload();
-            }
-        }
-
-        // --- LOGIN & PERMISSIONS ---
-        function toggleLoginInputHint() {
-            const role = document.getElementById("loginRole").value;
-            const label = document.getElementById("loginIdLabel");
-            const hint = document.getElementById("loginHint");
-            if (role === "ADMIN") {
-                label.textContent = "管理者職編 或 輔助管理者職編";
-                hint.textContent = "預設管理者職編: 06190";
-            } else {
-                label.textContent = "個管職務編號 (職編)";
-                hint.textContent = "請輸入您的個管職編登入 (例如: A001)";
-            }
-        }
-
-        function handleLogin(e) {
-            e.preventDefault();
-            const role = document.getElementById("loginRole").value;
-            const inputVal = document.getElementById("loginIdInput").value.trim().toUpperCase();
-
-            if (!inputVal) return showToast("請輸入職編登入", "error");
-
-            if (role === "ADMIN") {
-                if (inputVal === "06190") {
-                    currentUser = { id: "06190", name: "系統管理者", role: "ADMIN", isAssistant: true };
-                } else {
-                    const u = usersData.find(x => x.id.toUpperCase() === inputVal && x.isAssistant);
-                    if (u) {
-                        currentUser = { id: u.id, name: u.name, role: "ADMIN", isAssistant: true };
-                    } else {
-                        return showToast("無管理者權限或職編錯誤", "error");
-                    }
-                }
-            } else {
-                const u = usersData.find(x => x.id.toUpperCase() === inputVal);
-                if (u) {
-                    currentUser = { id: u.id, name: u.name, role: "CASE_MANAGER", isAssistant: !!u.isAssistant };
-                } else {
-                    currentUser = { id: inputVal, name: `個管師 ${inputVal}`, role: "CASE_MANAGER", isAssistant: false };
-                    usersData.push({ id: inputVal, name: `個管師 ${inputVal}`, isAssistant: false });
-                    saveAllToStorage();
-                    renderUsersTable();
-                }
-            }
-
-            document.getElementById("loginModal").classList.add("hidden");
-            document.getElementById("headerUserName").textContent = currentUser.name;
-            document.getElementById("headerUserId").textContent = `(${currentUser.id})`;
-            document.getElementById("headerRoleBadge").textContent = currentUser.role === "ADMIN" ? "管理者" : "A個管";
-            
-            showToast(`歡迎登入！${currentUser.name}`, "success");
-            updateFairRecommendUnit();
-            filterOtherUnitsDropdown();
-        }
-
-        function handleLogout() {
-            currentUser = null;
-            document.getElementById("loginModal").classList.remove("hidden");
-        }
-
-        // --- NAVIGATION & TABS ---
-        function switchTab(tabKey) {
-            if (tabKey === 'settings' && !(currentUser && (currentUser.role === 'ADMIN' || currentUser.isAssistant))) {
-                return showToast("只有管理者或輔助管理者可存取設定功能！", "error");
-            }
-
-            document.querySelectorAll(".tab-btn").forEach(b => {
-                b.classList.remove("active", "bg-brand-50", "text-brand-700", "border", "border-brand-200");
-                b.classList.add("text-slate-600", "hover:bg-slate-100");
-            });
-
-            document.querySelectorAll(".page-content").forEach(p => p.classList.add("hidden"));
-
-            const activeBtn = document.getElementById(`tab-${tabKey}`);
-            activeBtn.classList.add("active", "bg-brand-50", "text-brand-700", "border", "border-brand-200");
-            
-            document.getElementById(`page-${tabKey}`).classList.remove("hidden");
-        }
-
-        function switchSettingsSubtab(subKey) {
-            document.querySelectorAll(".subtab-btn").forEach(b => {
-                b.classList.remove("bg-brand-600", "text-white");
-                b.classList.add("bg-slate-100", "text-slate-600");
-            });
-
-            document.querySelectorAll(".subcontent").forEach(c => c.classList.add("hidden"));
-
-            const activeSub = document.getElementById(`subtab-${subKey}`);
-            if (activeSub) {
-                activeSub.classList.add("bg-brand-600", "text-white");
-                activeSub.classList.remove("bg-slate-100", "text-slate-600");
-            }
-
-            document.getElementById(`subcontent-${subKey}`).classList.remove("hidden");
-        }
-
-        function setupDropdowns() {
-            const districtSelects = ["fairFilterDistrict", "otherDistrict"];
-            districtSelects.forEach(id => {
-                const el = document.getElementById(id);
-                DISTRICTS.forEach(d => el.appendChild(new Option(d, d)));
-            });
-
-            const serviceSelects = ["fairFilterService", "otherService"];
-            serviceSelects.forEach(id => {
-                const el = document.getElementById(id);
-                SERVICES.forEach(s => el.appendChild(new Option(s, s)));
-            });
-        }
-
-        // --- ALGORITHM: FAIR DISPATCH ENGINE ---
-        function getFairEligibleUnits(district, service) {
-            const today = new Date().toISOString().split("T")[0];
-
-            return unitsData.filter(u => {
-                if (u.isPaused) return false;
-                if (u.startDate && u.startDate > today) return false;
-                if (u.endDate && u.endDate < today) return false;
-                return u.districts.includes(district) && u.services.includes(service);
-            }).sort((a, b) => {
-                const countA = countUnitDispatches(a.name, service);
-                const countB = countUnitDispatches(b.name, service);
-
-                if (countA !== countB) return countA - countB; // Lowest count first
-
-                const lastA = getLastDispatchTime(a.name, service);
-                const lastB = getLastDispatchTime(b.name, service);
-
-                if (lastA !== lastB) return lastA.localeCompare(lastB);
-
-                return a.name.localeCompare(b.name);
-            });
-        }
-
-        function countUnitDispatches(unitName, service) {
-            const countFair = fairRecordsData.filter(r => r.unitName === unitName && r.service === service && r.status !== "未收案").length;
-            const countOther = otherRecordsData.filter(r => r.unitName === unitName && r.service === service && r.status !== "未收案").length;
-            return countFair + countOther;
-        }
-
-        function getLastDispatchTime(unitName, service) {
-            const all = [...fairRecordsData, ...otherRecordsData].filter(r => r.unitName === unitName && r.service === service);
-            if (all.length === 0) return "0000-00-00";
-            all.sort((a,b) => b.dispatchDate.localeCompare(a.dispatchDate));
-            return all[0].dispatchDate;
-        }
-
-        function updateFairRecommendUnit() {
-            const dist = document.getElementById("fairFilterDistrict").value;
-            const serv = document.getElementById("fairFilterService").value;
-            const textEl = document.getElementById("fairRecommendText");
-
-            if (!dist || !serv) {
-                textEl.innerHTML = `<span class="text-slate-400">請選擇鄉鎮與服務類型</span>`;
-                return;
-            }
-
-            const eligible = getFairEligibleUnits(dist, serv);
-            if (eligible.length === 0) {
-                textEl.innerHTML = `<span class="text-red-500">此區域與類型目前無可用 B 單位</span>`;
-            } else {
-                const top = eligible[0];
-                const count = countUnitDispatches(top.name, serv);
-                textEl.innerHTML = `${top.name} <span class="text-xs bg-emerald-200 text-emerald-900 px-2 py-0.5 rounded-full font-normal">已累積派案 ${count} 次</span>`;
-            }
-        }
-
-        function submitFairDispatch() {
-            if (!currentUser) return showToast("請先登入！", "error");
-            const dist = document.getElementById("fairFilterDistrict").value;
-            const serv = document.getElementById("fairFilterService").value;
-            const caseName = document.getElementById("fairCaseName").value.trim();
-            const caseId = document.getElementById("fairCaseId").value.trim().toUpperCase();
-
-            if (!dist || !serv || !caseName || !caseId) {
-                return showToast("請完整填寫區域、類型、個案姓名與 ID！", "error");
-            }
-
-            const eligible = getFairEligibleUnits(dist, serv);
-            if (eligible.length === 0) return showToast("該區目前無符合資格的 B 單位！", "error");
-
-            const assignedUnit = eligible[0];
-            const newRecord = {
-                id: "F" + Date.now(),
-                dispatchDate: new Date().toISOString().split("T")[0],
-                managerId: currentUser.id,
-                managerName: currentUser.name,
-                district: dist,
-                service: serv,
-                caseName: caseName,
-                caseId: caseId,
-                unitName: assignedUnit.name,
-                status: "PENDING",
-                unacceptedReason: "",
-                passDate: "",
-                referralDate: "",
-                firstServiceDate: "",
-                referralOverReason: "",
-                serviceOverReason: ""
-            };
-
-            fairRecordsData.unshift(newRecord);
-            saveAllToStorage();
-            renderFairRecordsTable();
-            renderKpiTable();
-            updateFairRecommendUnit();
-
-            document.getElementById("fairCaseName").value = "";
-            document.getElementById("fairCaseId").value = "";
-            showToast(`已成功依公平輪派帶入 [${assignedUnit.name}]`, "success");
-        }
-
-        function renderFairRecordsTable() {
-            const tbody = document.getElementById("fairRecordsTbody");
-            tbody.innerHTML = "";
-
-            if (fairRecordsData.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="8" class="text-center py-6 text-slate-400">目前尚無一般輪派紀錄</td></tr>`;
-                return;
-            }
-
-            fairRecordsData.forEach((r) => {
-                const tr = document.createElement("tr");
-                const isUnreplied = (r.status === "PENDING" || !r.status);
-                if (isUnreplied) tr.classList.add("unreplied-row");
-
-                tr.innerHTML = `
-                    <td class="py-2.5 px-3 whitespace-nowrap">${r.dispatchDate}</td>
-                    <td class="py-2.5 px-3 font-semibold">${r.managerName} (${r.managerId})</td>
-                    <td class="py-2.5 px-3">${r.district} / ${r.service}</td>
-                    <td class="py-2.5 px-3 font-medium">${r.caseName} (${r.caseId})</td>
-                    <td class="py-2.5 px-3 font-bold text-slate-800">${r.unitName}</td>
-                    <td class="py-2.5 px-3">
-                        <select onchange="updateFairStatus('${r.id}', this.value)" class="bg-white border border-slate-300 rounded p-1 text-xs">
-                            <option value="PENDING" ${r.status === 'PENDING' ? 'selected' : ''}>尚未回覆</option>
-                            <option value="可提供服務" ${r.status === '可提供服務' ? 'selected' : ''}>可提供服務</option>
-                            <option value="未收案" ${r.status === '未收案' ? 'selected' : ''}>未收案</option>
+        fairRecordsData.forEach((r) => {
+            const tr = document.createElement("tr");
+            if (r.status === "PENDING" || !r.status) tr.classList.add("unreplied-row");
+            tr.innerHTML = `
+                <td class="py-2.5 px-3">${r.dispatchDate}</td>
+                <td class="py-2.5 px-3 font-semibold">${r.managerName} (${r.managerId})</td>
+                <td class="py-2.5 px-3">${r.district} / ${r.service}</td>
+                <td class="py-2.5 px-3 font-medium">${r.caseName} (${r.caseId})</td>
+                <td class="py-2.5 px-3 font-bold text-slate-800">${r.unitName}</td>
+                <td class="py-2.5 px-3">
+                    <select onchange="updateFairStatus('${r.id}', this.value)" class="bg-white border rounded p-1 text-xs">
+                        <option value="PENDING" ${r.status === 'PENDING' ? 'selected' : ''}>尚未回覆</option>
+                        <option value="可提供服務" ${r.status === '可提供服務' ? 'selected' : ''}>可提供服務</option>
+                        <option value="未收案" ${r.status === '未收案' ? 'selected' : ''}>未收案</option>
+                    </select>
+                </td>
+                <td class="py-2.5 px-3">
+                    ${r.status === '未收案' ? `
+                        <select onchange="updateFairReason('${r.id}', this.value)" class="bg-white border border-red-300 text-red-700 rounded p-1 text-xs">
+                            ${UNACCEPTED_REASONS.map(reason => `<option value="${reason}" ${r.unacceptedReason === reason ? 'selected' : ''}>${reason}</option>`).join('')}
                         </select>
-                    </td>
-                    <td class="py-2.5 px-3">
-                        ${r.status === '未收案' ? `
-                            <select onchange="updateFairReason('${r.id}', this.value)" class="bg-white border border-red-300 text-red-700 rounded p-1 text-xs">
-                                ${UNACCEPTED_REASONS.map(reason => `<option value="${reason}" ${r.unacceptedReason === reason ? 'selected' : ''}>${reason}</option>`).join('')}
-                            </select>
-                            ${r.unacceptedReason && r.unacceptedReason.startsWith("其他") ? `
-                                <input type="text" value="${r.customReason || ''}" onchange="updateFairCustomReason('${r.id}', this.value)" placeholder="自填原因..." class="mt-1 border rounded p-1 text-xs w-full">
-                            ` : ''}
-                        ` : '<span class="text-slate-400">-</span>'}
-                    </td>
-                    <td class="py-2.5 px-3 text-center whitespace-nowrap">
-                        ${r.status === '未收案' ? `
-                            <button onclick="reDispatchNextFair('${r.id}')" class="bg-amber-600 hover:bg-amber-700 text-white px-2 py-1 rounded text-[11px] font-bold">
-                                <i class="fa-solid fa-arrows-rotate mr-1"></i>改派下一個
-                            </button>
-                        ` : ''}
-                        <button onclick="deleteFairRecord('${r.id}')" class="text-slate-400 hover:text-red-600 ml-1">
-                            <i class="fa-solid fa-trash"></i>
-                        </button>
-                    </td>
-                `;
-                tbody.appendChild(tr);
-            });
-        }
+                    ` : '<span class="text-slate-400">-</span>'}
+                </td>
+                <td class="py-2.5 px-3 text-center whitespace-nowrap">
+                    ${r.status === '未收案' ? `<button onclick="reDispatchNextFair('${r.id}')" class="bg-amber-600 text-white px-2 py-1 rounded text-[11px] font-bold">改派下一個</button>` : ''}
+                    <button onclick="deleteFairRecord('${r.id}')" class="text-slate-400 hover:text-red-600 ml-1"><i class="fa-solid fa-trash"></i></button>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
 
-        function updateFairStatus(id, newStatus) {
-            const r = fairRecordsData.find(x => x.id === id);
-            if (!r) return;
+    function updateFairStatus(id, newStatus) {
+        const r = fairRecordsData.find(x => x.id === id);
+        if (r) {
             r.status = newStatus;
-            if (newStatus === "未收案" && !r.unacceptedReason) {
-                r.unacceptedReason = UNACCEPTED_REASONS[0];
-            }
-            saveAllToStorage();
-            renderFairRecordsTable();
-            renderKpiTable();
-            updateFairRecommendUnit();
+            if (newStatus === "未收案" && !r.unacceptedReason) r.unacceptedReason = UNACCEPTED_REASONS[0];
+            saveAllToStorage(); renderFairRecordsTable(); renderKpiTable(); updateFairRecommendUnit();
         }
+    }
+    function updateFairReason(id, reason) { const r = fairRecordsData.find(x => x.id === id); if (r) { r.unacceptedReason = reason; saveAllToStorage(); } }
 
-        function updateFairReason(id, reason) {
-            const r = fairRecordsData.find(x => x.id === id);
-            if (r) {
-                r.unacceptedReason = reason;
-                saveAllToStorage();
-            }
-        }
+    function reDispatchNextFair(oldId) {
+        const oldRec = fairRecordsData.find(x => x.id === oldId);
+        if (!oldRec) return;
+        const rejected = fairRecordsData.filter(x => x.caseId === oldRec.caseId && x.service === oldRec.service).map(x => x.unitName);
+        const eligible = getFairEligibleUnits(oldRec.district, oldRec.service).filter(u => !rejected.includes(u.name));
+        if (eligible.length === 0) return showToast("無其他可用單位可改派！", "error");
+        fairRecordsData.unshift({
+            ...oldRec, id: "F" + Date.now(), dispatchDate: new Date().toISOString().split("T")[0],
+            unitName: eligible[0].name, status: "PENDING", unacceptedReason: ""
+        });
+        saveAllToStorage(); renderFairRecordsTable(); updateFairRecommendUnit();
+        showToast(`已改派下一個單位：[${eligible[0].name}]`, "success");
+    }
 
-        function updateFairCustomReason(id, customText) {
-            const r = fairRecordsData.find(x => x.id === id);
-            if (r) {
-                r.customReason = customText;
-                saveAllToStorage();
-            }
-        }
+    function deleteFairRecord(id) {
+        if (confirm("確定刪除此紀錄？")) { fairRecordsData = fairRecordsData.filter(x => x.id !== id); saveAllToStorage(); renderFairRecordsTable(); renderKpiTable(); }
+    }
 
-        function reDispatchNextFair(oldRecordId) {
-            const oldRec = fairRecordsData.find(x => x.id === oldRecordId);
-            if (!oldRec) return;
+    // 其他派案
+    function filterOtherUnitsDropdown() {
+        const dist = document.getElementById("otherDistrict").value;
+        const serv = document.getElementById("otherService").value;
+        const kw = document.getElementById("otherUnitSearch").value.toLowerCase();
+        const select = document.getElementById("otherUnitSelect");
+        select.innerHTML = "";
+        let filtered = unitsData.filter(u => !u.isPaused);
+        if (dist) filtered = filtered.filter(u => u.districts.includes(dist));
+        if (serv) filtered = filtered.filter(u => u.services.includes(serv));
+        if (kw) filtered = filtered.filter(u => u.name.toLowerCase().includes(kw));
 
-            const rejectedUnits = fairRecordsData.filter(x => x.caseId === oldRec.caseId && x.service === oldRec.service).map(x => x.unitName);
-            const eligible = getFairEligibleUnits(oldRec.district, oldRec.service).filter(u => !rejectedUnits.includes(u.name));
+        if (filtered.length === 0) select.appendChild(new Option("-- 無符合條件單位 --", ""));
+        else filtered.forEach(u => select.appendChild(new Option(u.name, u.name)));
+    }
 
-            if (eligible.length === 0) return showToast("已無其他可用公平單位可供改派！", "error");
+    function submitOtherDispatch() {
+        if (!currentUser) return showToast("請先登入！", "error");
+        const type = document.getElementById("otherDispatchType").value;
+        const dist = document.getElementById("otherDistrict").value;
+        const serv = document.getElementById("otherService").value;
+        const unitName = document.getElementById("otherUnitSelect").value;
+        const caseName = document.getElementById("otherCaseName").value.trim();
+        const caseId = document.getElementById("otherCaseId").value.trim().toUpperCase();
 
-            const nextUnit = eligible[0];
-            const newRecord = {
-                ...oldRec,
-                id: "F" + Date.now(),
-                dispatchDate: new Date().toISOString().split("T")[0],
-                unitName: nextUnit.name,
-                status: "PENDING",
-                unacceptedReason: ""
-            };
+        if (!dist || !serv || !unitName || !caseName || !caseId) return showToast("請完整填寫欄位！", "error");
 
-            fairRecordsData.unshift(newRecord);
-            saveAllToStorage();
-            renderFairRecordsTable();
-            updateFairRecommendUnit();
-            showToast(`已成功改派至下一個公平單位：[${nextUnit.name}]`, "success");
-        }
+        otherRecordsData.unshift({
+            id: "O" + Date.now(), dispatchDate: new Date().toISOString().split("T")[0],
+            managerId: currentUser.id, managerName: currentUser.name, dispatchType: type,
+            district: dist, service: serv, caseName, caseId, unitName, status: "PENDING", unacceptedReason: ""
+        });
+        saveAllToStorage(); renderOtherRecordsTable(); renderKpiTable();
+        document.getElementById("otherCaseName").value = ""; document.getElementById("otherCaseId").value = "";
+        showToast("其他派案新增成功！", "success");
+    }
 
-        function deleteFairRecord(id) {
-            if (confirm("確定刪除此筆輪派紀錄？")) {
-                fairRecordsData = fairRecordsData.filter(x => x.id !== id);
-                saveAllToStorage();
-                renderFairRecordsTable();
-                renderKpiTable();
-            }
-        }
-
-        // --- PAGE 2: OTHER DISPATCH LOGIC ---
-        function filterOtherUnitsDropdown() {
-            const dist = document.getElementById("otherDistrict").value;
-            const serv = document.getElementById("otherService").value;
-            const kw = document.getElementById("otherUnitSearch").value.toLowerCase();
-            const select = document.getElementById("otherUnitSelect");
-
-            select.innerHTML = "";
-            let filtered = unitsData.filter(u => !u.isPaused);
-            if (dist) filtered = filtered.filter(u => u.districts.includes(dist));
-            if (serv) filtered = filtered.filter(u => u.services.includes(serv));
-            if (kw) filtered = filtered.filter(u => u.name.toLowerCase().includes(kw));
-
-            if (filtered.length === 0) {
-                select.appendChild(new Option("-- 無符合條件單位 --", ""));
-            } else {
-                filtered.forEach(u => select.appendChild(new Option(u.name, u.name)));
-            }
-        }
-
-        function submitOtherDispatch() {
-            if (!currentUser) return showToast("請先登入！", "error");
-            const dispatchType = document.getElementById("otherDispatchType").value;
-            const dist = document.getElementById("otherDistrict").value;
-            const serv = document.getElementById("otherService").value;
-            const unitName = document.getElementById("otherUnitSelect").value;
-            const caseName = document.getElementById("otherCaseName").value.trim();
-            const caseId = document.getElementById("otherCaseId").value.trim().toUpperCase();
-
-            if (!dist || !serv || !unitName || !caseName || !caseId) {
-                return showToast("請填寫所有欄位與指定單位！", "error");
-            }
-
-            const newRecord = {
-                id: "O" + Date.now(),
-                dispatchDate: new Date().toISOString().split("T")[0],
-                managerId: currentUser.id,
-                managerName: currentUser.name,
-                dispatchType: dispatchType,
-                district: dist,
-                service: serv,
-                caseName: caseName,
-                caseId: caseId,
-                unitName: unitName,
-                status: "PENDING",
-                unacceptedReason: "",
-                passDate: "",
-                referralDate: "",
-                firstServiceDate: ""
-            };
-
-            otherRecordsData.unshift(newRecord);
-            saveAllToStorage();
-            renderOtherRecordsTable();
-            renderKpiTable();
-
-            document.getElementById("otherCaseName").value = "";
-            document.getElementById("otherCaseId").value = "";
-            showToast("其他派案紀錄新增成功！", "success");
-        }
-
-        function renderOtherRecordsTable() {
-            const tbody = document.getElementById("otherRecordsTbody");
-            tbody.innerHTML = "";
-
-            if (otherRecordsData.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="9" class="text-center py-6 text-slate-400">目前尚無其他派案紀錄</td></tr>`;
-                return;
-            }
-
-            otherRecordsData.forEach(r => {
-                const tr = document.createElement("tr");
-                const isUnreplied = (r.status === "PENDING" || !r.status);
-                if (isUnreplied) tr.classList.add("unreplied-row");
-
-                tr.innerHTML = `
-                    <td class="py-2.5 px-3">${r.dispatchDate}</td>
-                    <td class="py-2.5 px-3 font-semibold">${r.managerName}</td>
-                    <td class="py-2.5 px-3"><span class="bg-brand-100 text-brand-800 px-2 py-0.5 rounded font-bold">${r.dispatchType}</span></td>
-                    <td class="py-2.5 px-3">${r.district} / ${r.service}</td>
-                    <td class="py-2.5 px-3 font-medium">${r.caseName} (${r.caseId})</td>
-                    <td class="py-2.5 px-3 font-bold text-slate-800">${r.unitName}</td>
-                    <td class="py-2.5 px-3">
-                        <select onchange="updateOtherStatus('${r.id}', this.value)" class="bg-white border border-slate-300 rounded p-1 text-xs">
-                            <option value="PENDING" ${r.status === 'PENDING' ? 'selected' : ''}>尚未回覆</option>
-                            <option value="可提供服務" ${r.status === '可提供服務' ? 'selected' : ''}>可提供服務</option>
-                            <option value="未收案" ${r.status === '未收案' ? 'selected' : ''}>未收案</option>
+    function renderOtherRecordsTable() {
+        const tbody = document.getElementById("otherRecordsTbody");
+        tbody.innerHTML = "";
+        if (otherRecordsData.length === 0) { tbody.innerHTML = `<tr><td colspan="9" class="text-center py-6 text-slate-400">尚無其他派案紀錄</td></tr>`; return; }
+        otherRecordsData.forEach(r => {
+            const tr = document.createElement("tr");
+            if (r.status === "PENDING" || !r.status) tr.classList.add("unreplied-row");
+            tr.innerHTML = `
+                <td class="py-2.5 px-3">${r.dispatchDate}</td>
+                <td class="py-2.5 px-3 font-semibold">${r.managerName}</td>
+                <td class="py-2.5 px-3"><span class="bg-brand-100 text-brand-800 px-2 py-0.5 rounded font-bold">${r.dispatchType}</span></td>
+                <td class="py-2.5 px-3">${r.district} / ${r.service}</td>
+                <td class="py-2.5 px-3 font-medium">${r.caseName} (${r.caseId})</td>
+                <td class="py-2.5 px-3 font-bold text-slate-800">${r.unitName}</td>
+                <td class="py-2.5 px-3">
+                    <select onchange="updateOtherStatus('${r.id}', this.value)" class="bg-white border rounded p-1 text-xs">
+                        <option value="PENDING" ${r.status === 'PENDING' ? 'selected' : ''}>尚未回覆</option>
+                        <option value="可提供服務" ${r.status === '可提供服務' ? 'selected' : ''}>可提供服務</option>
+                        <option value="未收案" ${r.status === '未收案' ? 'selected' : ''}>未收案</option>
+                    </select>
+                </td>
+                <td class="py-2.5 px-3">
+                    ${r.status === '未收案' ? `
+                        <select onchange="updateOtherReason('${r.id}', this.value)" class="bg-white border border-red-300 text-red-700 rounded p-1 text-xs">
+                            ${UNACCEPTED_REASONS.map(reason => `<option value="${reason}" ${r.unacceptedReason === reason ? 'selected' : ''}>${reason}</option>`).join('')}
                         </select>
-                    </td>
-                    <td class="py-2.5 px-3">
-                        ${r.status === '未收案' ? `
-                            <select onchange="updateOtherReason('${r.id}', this.value)" class="bg-white border border-red-300 text-red-700 rounded p-1 text-xs">
-                                ${UNACCEPTED_REASONS.map(reason => `<option value="${reason}" ${r.unacceptedReason === reason ? 'selected' : ''}>${reason}</option>`).join('')}
-                            </select>
-                        ` : '<span class="text-slate-400">-</span>'}
-                    </td>
-                    <td class="py-2.5 px-3 text-center">
-                        <button onclick="deleteOtherRecord('${r.id}')" class="text-slate-400 hover:text-red-600">
-                            <i class="fa-solid fa-trash"></i>
-                        </button>
-                    </td>
-                `;
-                tbody.appendChild(tr);
-            });
-        }
+                    ` : '<span class="text-slate-400">-</span>'}
+                </td>
+                <td class="py-2.5 px-3 text-center"><button onclick="deleteOtherRecord('${r.id}')" class="text-slate-400 hover:text-red-600"><i class="fa-solid fa-trash"></i></button></td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
 
-        function updateOtherStatus(id, newStatus) {
-            const r = otherRecordsData.find(x => x.id === id);
-            if (r) {
-                r.status = newStatus;
-                if (newStatus === "未收案" && !r.unacceptedReason) r.unacceptedReason = UNACCEPTED_REASONS[0];
-                saveAllToStorage();
-                renderOtherRecordsTable();
-                renderKpiTable();
-            }
-        }
+    function updateOtherStatus(id, newStatus) {
+        const r = otherRecordsData.find(x => x.id === id);
+        if (r) { r.status = newStatus; if (newStatus === "未收案" && !r.unacceptedReason) r.unacceptedReason = UNACCEPTED_REASONS[0]; saveAllToStorage(); renderOtherRecordsTable(); renderKpiTable(); }
+    }
+    function updateOtherReason(id, reason) { const r = otherRecordsData.find(x => x.id === id); if (r) { r.unacceptedReason = reason; saveAllToStorage(); } }
+    function deleteOtherRecord(id) { if (confirm("確定刪除此筆紀錄？")) { otherRecordsData = otherRecordsData.filter(x => x.id !== id); saveAllToStorage(); renderOtherRecordsTable(); renderKpiTable(); } }
 
-        function updateOtherReason(id, reason) {
-            const r = otherRecordsData.find(x => x.id === id);
-            if (r) { r.unacceptedReason = reason; saveAllToStorage(); }
-        }
-
-        function deleteOtherRecord(id) {
-            if (confirm("確定刪除此筆派案紀錄？")) {
-                otherRecordsData = otherRecordsData.filter(x => x.id !== id);
-                saveAllToStorage();
-                renderOtherRecordsTable();
-                renderKpiTable();
-            }
-        }
-
-        // --- WORKDAY TIMELINE CALCULATION ENGINE ---
-        function calculateWorkdays(startDateStr, endDateStr) {
-            if (!startDateStr || !endDateStr) return 0;
-            let start = new Date(startDateStr);
-            let end = new Date(endDateStr);
-            if (start > end) return 0;
-
-            let count = 0;
-            let cur = new Date(start);
+    // 工作天時效計算
+    function calculateWorkdays(startDateStr, endDateStr) {
+        if (!startDateStr || !endDateStr) return 0;
+        let start = new Date(startDateStr); let end = new Date(endDateStr);
+        if (start > end) return 0;
+        let count = 0; let cur = new Date(start); cur.setDate(cur.getDate() + 1);
+        const holidaySet = new Set(holidaysData.map(h => h.date));
+        while (cur <= end) {
+            const day = cur.getDay(); const dStr = cur.toISOString().split("T")[0];
+            if (day !== 0 && day !== 6 && !holidaySet.has(dStr)) count++;
             cur.setDate(cur.getDate() + 1);
+        }
+        return count;
+    }
 
-            const holidaySet = new Set(holidaysData.map(h => h.date));
+    function renderKpiTable() {
+        const tbody = document.getElementById("kpiTableTbody");
+        tbody.innerHTML = "";
+        const monthVal = document.getElementById("kpiMonthFilter").value;
+        let successRecords = [...fairRecordsData.map(r => ({ ...r, origin: 'fair' })), ...otherRecordsData.map(r => ({ ...r, origin: 'other' }))].filter(r => r.status === "可提供服務");
+        if (monthVal) successRecords = successRecords.filter(r => r.dispatchDate.startsWith(monthVal));
 
-            while (cur <= end) {
-                const dayOfWeek = cur.getDay();
-                const dateStr = cur.toISOString().split("T")[0];
-                if (dayOfWeek !== 0 && dayOfWeek !== 6 && !holidaySet.has(dateStr)) {
-                    count++;
-                }
-                cur.setDate(cur.getDate() + 1);
-            }
-            return count;
+        document.getElementById("kpiSuccessCount").textContent = successRecords.length;
+        let totalRefDays = 0, totalSrvDays = 0, refCount = 0, srvCount = 0;
+
+        if (successRecords.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="10" class="text-center py-6 text-slate-400">尚無派案成功之案件可統計時效</td></tr>`;
+            document.getElementById("kpiAvgReferral").textContent = "0.0 天";
+            document.getElementById("kpiAvgService").textContent = "0.0 天";
+            return;
         }
 
-        function renderKpiTable() {
-            const tbody = document.getElementById("kpiTableTbody");
-            tbody.innerHTML = "";
+        successRecords.forEach(r => {
+            const refDays = calculateWorkdays(r.passDate, r.referralDate);
+            const srvDays = calculateWorkdays(r.referralDate, r.firstServiceDate);
+            if (r.passDate && r.referralDate) { totalRefDays += refDays; refCount++; }
+            if (r.referralDate && r.firstServiceDate) { totalSrvDays += srvDays; srvCount++; }
 
-            const monthVal = document.getElementById("kpiMonthFilter").value;
+            const isRefOver = refDays > 2;
+            const isSrvOver = SPECIAL_TIMEOVER_SERVICES.includes(r.service) && srvDays > 5;
 
-            let successRecords = [
-                ...fairRecordsData.map(r => ({ ...r, origin: 'fair' })),
-                ...otherRecordsData.map(r => ({ ...r, origin: 'other' }))
-            ].filter(r => r.status === "可提供服務");
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+                <td class="py-2.5 px-3">${r.dispatchDate}</td>
+                <td class="py-2.5 px-3 font-medium">${r.caseName} (${r.caseId})</td>
+                <td class="py-2.5 px-3">${r.service}</td>
+                <td class="py-2.5 px-3 font-bold">${r.unitName}</td>
+                <td class="py-2.5 px-3"><input type="date" value="${r.passDate || ''}" onchange="updateKpiDates('${r.id}', '${r.origin}', 'passDate', this.value)" class="border rounded p-1 text-xs"></td>
+                <td class="py-2.5 px-3"><input type="date" value="${r.referralDate || ''}" onchange="updateKpiDates('${r.id}', '${r.origin}', 'referralDate', this.value)" class="border rounded p-1 text-xs"></td>
+                <td class="py-2.5 px-3"><input type="date" value="${r.firstServiceDate || ''}" onchange="updateKpiDates('${r.id}', '${r.origin}', 'firstServiceDate', this.value)" class="border rounded p-1 text-xs"></td>
+                <td class="py-2.5 px-3 text-center font-bold ${isRefOver ? 'text-red-600 text-sm' : 'text-slate-700'}">${r.passDate && r.referralDate ? refDays + " 天" : "-"}</td>
+                <td class="py-2.5 px-3 text-center font-bold ${isSrvOver ? 'text-red-600 text-sm' : 'text-slate-700'}">${r.referralDate && r.firstServiceDate ? srvDays + " 天" : "-"}</td>
+                <td class="py-2.5 px-3">${isRefOver || isSrvOver ? '<span class="text-red-600 font-bold">超時需備註</span>' : '<span class="text-slate-400">時效正常</span>'}</td>
+            `;
+            tbody.appendChild(tr);
+        });
 
-            if (monthVal) {
-                successRecords = successRecords.filter(r => r.dispatchDate.startsWith(monthVal));
-            }
+        document.getElementById("kpiAvgReferral").textContent = refCount ? (totalRefDays / refCount).toFixed(1) + " 天" : "0.0 天";
+        document.getElementById("kpiAvgService").textContent = srvCount ? (totalSrvDays / srvCount).toFixed(1) + " 天" : "0.0 天";
+    }
 
-            document.getElementById("kpiSuccessCount").textContent = successRecords.length;
+    function updateKpiDates(id, origin, field, value) {
+        const list = origin === 'fair' ? fairRecordsData : otherRecordsData;
+        const r = list.find(x => x.id === id);
+        if (r) { r[field] = value; saveAllToStorage(); renderKpiTable(); }
+    }
 
-            let totalReferralDays = 0;
-            let totalServiceDays = 0;
-            let referralCount = 0;
-            let serviceCount = 0;
+    // 系統設定維護
+    function renderHolidaysTable() {
+        document.getElementById("holidaysTbody").innerHTML = holidaysData.map((h, i) => `
+            <tr><td class="py-2 px-3 font-semibold">${h.date}</td><td class="py-2 px-3">${h.name}</td><td class="py-2 px-3 text-center"><button onclick="deleteHoliday(${i})" class="text-red-500"><i class="fa-solid fa-trash"></i></button></td></tr>
+        `).join('');
+    }
 
-            if (successRecords.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="10" class="text-center py-6 text-slate-400">目前尚無派案成功之案件可進行時效統計</td></tr>`;
-                document.getElementById("kpiAvgReferral").textContent = "0.0 天";
-                document.getElementById("kpiAvgService").textContent = "0.0 天";
-                return;
-            }
+    function addHoliday() {
+        const date = document.getElementById("holidayDate").value;
+        const name = document.getElementById("holidayName").value.trim();
+        if (!date || !name) return showToast("請選擇日期與名稱", "error");
+        holidaysData.push({ date, name }); saveAllToStorage(); renderHolidaysTable(); renderKpiTable(); showToast("放假日已新增", "success");
+    }
+    function deleteHoliday(i) { holidaysData.splice(i, 1); saveAllToStorage(); renderHolidaysTable(); renderKpiTable(); }
 
-            successRecords.forEach(r => {
-                const refDays = calculateWorkdays(r.passDate, r.referralDate);
-                const srvDays = calculateWorkdays(r.referralDate, r.firstServiceDate);
+    function renderUsersTable() {
+        document.getElementById("usersTbody").innerHTML = usersData.map(u => `
+            <tr>
+                <td class="py-2 px-3 font-bold">${u.id}</td><td class="py-2 px-3">${u.name}</td>
+                <td class="py-2 px-3">${u.isAssistant ? '<span class="bg-purple-100 text-purple-800 px-2 py-0.5 rounded font-bold">輔助管理者</span>' : 'A個管'}</td>
+                <td class="py-2 px-3 text-center"><input type="checkbox" ${u.isAssistant ? 'checked' : ''} onchange="toggleUserAssistant('${u.id}', this.checked)"></td>
+                <td class="py-2 px-3 text-center"><button onclick="deleteUser('${u.id}')" class="text-red-500"><i class="fa-solid fa-trash"></i></button></td>
+            </tr>
+        `).join('');
+    }
 
-                if (r.passDate && r.referralDate) {
-                    totalReferralDays += refDays;
-                    referralCount++;
-                }
-                if (r.referralDate && r.firstServiceDate) {
-                    totalServiceDays += srvDays;
-                    serviceCount++;
-                }
+    function saveUserAccount() {
+        const id = document.getElementById("userFormId").value.trim().toUpperCase();
+        const name = document.getElementById("userFormName").value.trim();
+        const isAssistant = document.getElementById("userFormIsAssistant").checked;
+        if (!id || !name) return showToast("請填寫職編與姓名", "error");
+        const u = usersData.find(x => x.id === id);
+        if (u) { u.name = name; u.isAssistant = isAssistant; }
+        else usersData.push({ id, name, isAssistant });
+        saveAllToStorage(); renderUsersTable(); showToast("帳號更新成功", "success");
+    }
 
-                const isRefOver = refDays > 2;
-                const isSpecialService = SPECIAL_TIMEOVER_SERVICES.includes(r.service);
-                const isSrvOver = isSpecialService && srvDays > 5;
+    function toggleUserAssistant(id, isAssistant) { const u = usersData.find(x => x.id === id); if (u) { u.isAssistant = isAssistant; saveAllToStorage(); renderUsersTable(); } }
+    function deleteUser(id) { if (confirm("確定刪除帳號？")) { usersData = usersData.filter(x => x.id !== id); saveAllToStorage(); renderUsersTable(); } }
 
-                const tr = document.createElement("tr");
-                tr.innerHTML = `
-                    <td class="py-2.5 px-3">${r.dispatchDate}</td>
-                    <td class="py-2.5 px-3 font-medium">${r.caseName} (${r.caseId})</td>
-                    <td class="py-2.5 px-3">${r.service}</td>
-                    <td class="py-2.5 px-3 font-bold">${r.unitName}</td>
-                    <td class="py-2.5 px-3">
-                        <input type="date" value="${r.passDate || ''}" onchange="updateKpiDates('${r.id}', '${r.origin}', 'passDate', this.value)" class="border rounded p-1 text-xs">
-                    </td>
-                    <td class="py-2.5 px-3">
-                        <input type="date" value="${r.referralDate || ''}" onchange="updateKpiDates('${r.id}', '${r.origin}', 'referralDate', this.value)" class="border rounded p-1 text-xs">
-                    </td>
-                    <td class="py-2.5 px-3">
-                        <input type="date" value="${r.firstServiceDate || ''}" onchange="updateKpiDates('${r.id}', '${r.origin}', 'firstServiceDate', this.value)" class="border rounded p-1 text-xs">
-                    </td>
-                    <td class="py-2.5 px-3 text-center font-bold ${isRefOver ? 'text-red-600 font-extrabold text-sm' : 'text-slate-700'}">
-                        ${r.passDate && r.referralDate ? refDays + " 天" : "-"}
-                    </td>
-                    <td class="py-2.5 px-3 text-center font-bold ${isSrvOver ? 'text-red-600 font-extrabold text-sm' : 'text-slate-700'}">
-                        ${r.referralDate && r.firstServiceDate ? srvDays + " 天" : "-"}
-                    </td>
-                    <td class="py-2.5 px-3">
-                        ${isRefOver ? `
-                            <div class="mb-1">
-                                <span class="text-[10px] text-red-600 font-bold block">照會超時備註:</span>
-                                <select onchange="updateKpiOverReason('${r.id}', '${r.origin}', 'referralOverReason', this.value)" class="border border-red-300 text-red-800 rounded p-1 text-[11px]">
-                                    <option value="個管因素" ${r.referralOverReason === '個管因素' ? 'selected' : ''}>個管因素</option>
-                                    <option value="計畫有誤" ${r.referralOverReason === '計畫有誤' ? 'selected' : ''}>計畫有誤</option>
-                                    <option value="其他" ${r.referralOverReason === '其他' ? 'selected' : ''}>其他</option>
-                                </select>
-                            </div>
-                        ` : ''}
-                        ${isSrvOver ? `
-                            <div>
-                                <span class="text-[10px] text-red-600 font-bold block">服務超時備註:</span>
-                                <select onchange="updateKpiOverReason('${r.id}', '${r.origin}', 'serviceOverReason', this.value)" class="border border-red-300 text-red-800 rounded p-1 text-[11px]">
-                                    <option value="配合案家時間" ${r.serviceOverReason === '配合案家時間' ? 'selected' : ''}>配合案家時間</option>
-                                    <option value="服務單位協調時間" ${r.serviceOverReason === '服務單位協調時間' ? 'selected' : ''}>服務單位協調時間</option>
-                                    <option value="等體檢" ${r.serviceOverReason === '等體檢' ? 'selected' : ''}>等體檢</option>
-                                    <option value="住院" ${r.serviceOverReason === '住院' ? 'selected' : ''}>住院</option>
-                                    <option value="純陪同就醫" ${r.serviceOverReason === '純陪同就醫' ? 'selected' : ''}>純陪同就醫</option>
-                                    <option value="純BA15" ${r.serviceOverReason === '純BA15' ? 'selected' : ''}>純BA15</option>
-                                    <option value="純BA16" ${r.serviceOverReason === '純BA16' ? 'selected' : ''}>純BA16</option>
-                                    <option value="其他" ${r.serviceOverReason === '其他' ? 'selected' : ''}>其他</option>
-                                </select>
-                            </div>
-                        ` : ''}
-                        ${!isRefOver && !isSrvOver ? '<span class="text-slate-400">時效正常</span>' : ''}
-                    </td>
-                `;
-                tbody.appendChild(tr);
-            });
+    // 全展開 B 單位維護表格 + 即時多重篩選器
+    function renderUnitsTable() {
+        const tbody = document.getElementById("unitsTbody");
+        tbody.innerHTML = "";
 
-            document.getElementById("kpiAvgReferral").textContent = referralCount ? (totalReferralDays / referralCount).toFixed(1) + " 天" : "0.0 天";
-            document.getElementById("kpiAvgService").textContent = serviceCount ? (totalServiceDays / serviceCount).toFixed(1) + " 天" : "0.0 天";
+        const kw = (document.getElementById("unitSearchKw")?.value || "").toLowerCase();
+        const dist = document.getElementById("unitSearchDistrict")?.value || "";
+        const serv = document.getElementById("unitSearchService")?.value || "";
+        const status = document.getElementById("unitSearchStatus")?.value || "";
+
+        let filtered = unitsData;
+        if (kw) filtered = filtered.filter(u => u.name.toLowerCase().includes(kw));
+        if (dist) filtered = filtered.filter(u => u.districts.includes(dist));
+        if (serv) filtered = filtered.filter(u => u.services.includes(serv));
+        if (status === "NORMAL") filtered = filtered.filter(u => !u.isPaused);
+        if (status === "PAUSED") filtered = filtered.filter(u => u.isPaused);
+
+        document.getElementById("unitCountBadge").textContent = `顯示中：${filtered.length} / ${unitsData.length} 家`;
+
+        if (filtered.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="6" class="text-center py-6 text-slate-400">無符合條件的 B 單位</td></tr>`;
+            return;
         }
 
-        function updateKpiDates(id, origin, dateField, value) {
-            const list = origin === 'fair' ? fairRecordsData : otherRecordsData;
-            const r = list.find(x => x.id === id);
-            if (r) {
-                r[dateField] = value;
-                saveAllToStorage();
-                renderKpiTable();
-            }
-        }
+        filtered.forEach(u => {
+            const tr = document.createElement("tr");
+            if (u.isPaused) tr.className = "bg-red-50/60";
+            tr.innerHTML = `
+                <td class="py-2.5 px-3 font-bold text-slate-800">${u.name}</td>
+                <td class="py-2.5 px-3">${u.districts.join(', ')}</td>
+                <td class="py-2.5 px-3">${u.services.join(', ')}</td>
+                <td class="py-2.5 px-3 text-slate-500">${u.startDate || '無'} ~ ${u.endDate || '無'}</td>
+                <td class="py-2.5 px-3 text-center">
+                    ${u.isPaused 
+                        ? `<span class="bg-red-200 text-red-900 px-2 py-0.5 rounded-full font-bold">已暫停 (${u.pauseReason || '未填'})</span>`
+                        : `<span class="bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full font-bold">正常服務中</span>`}
+                </td>
+                <td class="py-2.5 px-3 text-center whitespace-nowrap">
+                    <button onclick="openPauseModal('${u.id}')" class="text-amber-600 font-semibold mr-2"><i class="fa-solid fa-ban"></i> 暫停/恢復</button>
+                    <button onclick="editUnit('${u.id}')" class="text-brand-600 mr-2"><i class="fa-solid fa-pen-to-square"></i></button>
+                    <button onclick="deleteUnit('${u.id}')" class="text-red-500"><i class="fa-solid fa-trash"></i></button>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
 
-        function updateKpiOverReason(id, origin, field, value) {
-            const list = origin === 'fair' ? fairRecordsData : otherRecordsData;
-            const r = list.find(x => x.id === id);
-            if (r) {
-                r[field] = value;
-                saveAllToStorage();
-            }
-        }
+    function openAddUnitModal() {
+        document.getElementById("unitFormId").value = "";
+        document.getElementById("unitModalTitle").textContent = "新增 B 服務單位";
+        document.getElementById("unitForm").reset();
 
-        // --- PAGE 4: SETTINGS & MANAGEMENT ---
-        function renderHolidaysTable() {
-            const tbody = document.getElementById("holidaysTbody");
-            tbody.innerHTML = holidaysData.map((h, i) => `
-                <tr>
-                    <td class="py-2 px-3 font-semibold">${h.date}</td>
-                    <td class="py-2 px-3">${h.name}</td>
-                    <td class="py-2 px-3 text-center">
-                        <button onclick="deleteHoliday(${i})" class="text-red-500 hover:text-red-700"><i class="fa-solid fa-trash"></i></button>
-                    </td>
-                </tr>
-            `).join('');
-        }
+        document.getElementById("unitFormDistrictsCheckboxes").innerHTML = DISTRICTS.map(d => `<label><input type="checkbox" name="unitDistricts" value="${d}"> ${d}</label>`).join('');
+        document.getElementById("unitFormServicesCheckboxes").innerHTML = SERVICES.map(s => `<label><input type="checkbox" name="unitServices" value="${s}"> ${s}</label>`).join('');
+        document.getElementById("unitModal").classList.remove("hidden");
+    }
 
-        function addHoliday() {
-            const date = document.getElementById("holidayDate").value;
-            const name = document.getElementById("holidayName").value.trim();
-            if (!date || !name) return showToast("請選擇日期與填寫說明", "error");
+    function editUnit(id) {
+        const u = unitsData.find(x => x.id === id);
+        if (!u) return;
+        openAddUnitModal();
+        document.getElementById("unitModalTitle").textContent = "編輯 B 服務單位";
+        document.getElementById("unitFormId").value = u.id;
+        document.getElementById("unitFormName").value = u.name;
+        document.getElementById("unitFormStartDate").value = u.startDate || "";
+        document.getElementById("unitFormEndDate").value = u.endDate || "";
 
-            holidaysData.push({ date, name });
-            saveAllToStorage();
-            renderHolidaysTable();
-            renderKpiTable();
-            showToast("成功新增放假日", "success");
-        }
+        document.querySelectorAll('input[name="unitDistricts"]').forEach(cb => cb.checked = u.districts.includes(cb.value));
+        document.querySelectorAll('input[name="unitServices"]').forEach(cb => cb.checked = u.services.includes(cb.value));
+    }
 
-        function deleteHoliday(idx) {
-            holidaysData.splice(idx, 1);
-            saveAllToStorage();
-            renderHolidaysTable();
-            renderKpiTable();
-        }
+    function saveUnitForm(e) {
+        e.preventDefault();
+        const id = document.getElementById("unitFormId").value;
+        const name = document.getElementById("unitFormName").value.trim();
+        const startDate = document.getElementById("unitFormStartDate").value;
+        const endDate = document.getElementById("unitFormEndDate").value;
+        const selectedDistricts = Array.from(document.querySelectorAll('input[name="unitDistricts"]:checked')).map(cb => cb.value);
+        const selectedServices = Array.from(document.querySelectorAll('input[name="unitServices"]:checked')).map(cb => cb.value);
 
-        function renderUsersTable() {
-            const tbody = document.getElementById("usersTbody");
-            tbody.innerHTML = usersData.map(u => `
-                <tr>
-                    <td class="py-2 px-3 font-bold">${u.id}</td>
-                    <td class="py-2 px-3">${u.name}</td>
-                    <td class="py-2 px-3">${u.isAssistant ? '<span class="bg-purple-100 text-purple-800 px-2 py-0.5 rounded font-bold">輔助管理者</span>' : 'A個管'}</td>
-                    <td class="py-2 px-3 text-center">
-                        <input type="checkbox" ${u.isAssistant ? 'checked' : ''} onchange="toggleUserAssistant('${u.id}', this.checked)" class="rounded text-brand-600">
-                    </td>
-                    <td class="py-2 px-3 text-center">
-                        <button onclick="deleteUser('${u.id}')" class="text-red-500 hover:text-red-700"><i class="fa-solid fa-trash"></i></button>
-                    </td>
-                </tr>
-            `).join('');
-        }
+        if (!name || selectedDistricts.length === 0 || selectedServices.length === 0) return showToast("請完整填寫單位與選擇區域/類型！", "error");
 
-        function saveUserAccount() {
-            const id = document.getElementById("userFormId").value.trim().toUpperCase();
-            const name = document.getElementById("userFormName").value.trim();
-            const isAssistant = document.getElementById("userFormIsAssistant").checked;
-
-            if (!id || !name) return showToast("請輸入個管職編與姓名", "error");
-
-            const existing = usersData.find(u => u.id === id);
-            if (existing) {
-                existing.name = name;
-                existing.isAssistant = isAssistant;
-            } else {
-                usersData.push({ id, name, isAssistant });
-            }
-
-            saveAllToStorage();
-            renderUsersTable();
-            showToast("用戶帳號已更新", "success");
-        }
-
-        function toggleUserAssistant(userId, isAssistant) {
-            const u = usersData.find(x => x.id === userId);
-            if (u) {
-                u.isAssistant = isAssistant;
-                saveAllToStorage();
-                renderUsersTable();
-            }
-        }
-
-        function deleteUser(userId) {
-            if (confirm("確定刪除此帳號權限？")) {
-                usersData = usersData.filter(x => x.id !== userId);
-                saveAllToStorage();
-                renderUsersTable();
-            }
-        }
-
-        // --- B UNITS MANAGEMENT MODALS & OPERATIONS ---
-        function renderUnitsTable() {
-            const tbody = document.getElementById("unitsTbody");
-            tbody.innerHTML = unitsData.map(u => `
-                <tr class="${u.isPaused ? 'bg-red-50/60' : ''}">
-                    <td class="py-2.5 px-3 font-bold text-slate-800">${u.name}</td>
-                    <td class="py-2.5 px-3">${u.districts.join(', ')}</td>
-                    <td class="py-2.5 px-3">${u.services.join(', ')}</td>
-                    <td class="py-2.5 px-3 text-slate-500">${u.startDate || '無'} ~ ${u.endDate || '無'}</td>
-                    <td class="py-2.5 px-3 text-center">
-                        ${u.isPaused 
-                            ? `<span class="bg-red-200 text-red-900 px-2 py-0.5 rounded-full font-bold">已暫停 (${u.pauseReason || '未填'})</span>`
-                            : `<span class="bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full font-bold">正常服務中</span>`}
-                    </td>
-                    <td class="py-2.5 px-3 text-center whitespace-nowrap">
-                        <button onclick="openPauseModal('${u.id}')" class="text-amber-600 hover:text-amber-800 mr-2 font-semibold">
-                            <i class="fa-solid fa-ban"></i> 暫停/恢復
-                        </button>
-                        <button onclick="editUnit('${u.id}')" class="text-brand-600 hover:text-brand-800 mr-2">
-                            <i class="fa-solid fa-pen-to-square"></i>
-                        </button>
-                        <button onclick="deleteUnit('${u.id}')" class="text-red-500 hover:text-red-700">
-                            <i class="fa-solid fa-trash"></i>
-                        </button>
-                    </td>
-                </tr>
-            `).join('');
-        }
-
-        function openAddUnitModal() {
-            document.getElementById("unitFormId").value = "";
-            document.getElementById("unitModalTitle").textContent = "新增 B 服務單位";
-            document.getElementById("unitForm").reset();
-
-            const dContainer = document.getElementById("unitFormDistrictsCheckboxes");
-            dContainer.innerHTML = DISTRICTS.map(d => `<label><input type="checkbox" name="unitDistricts" value="${d}"> ${d}</label>`).join('');
-
-            const sContainer = document.getElementById("unitFormServicesCheckboxes");
-            sContainer.innerHTML = SERVICES.map(s => `<label><input type="checkbox" name="unitServices" value="${s}"> ${s}</label>`).join('');
-
-            document.getElementById("unitModal").classList.remove("hidden");
-        }
-
-        function editUnit(unitId) {
-            const u = unitsData.find(x => x.id === unitId);
-            if (!u) return;
-
-            openAddUnitModal();
-            document.getElementById("unitModalTitle").textContent = "編輯 B 服務單位";
-            document.getElementById("unitFormId").value = u.id;
-            document.getElementById("unitFormName").value = u.name;
-            document.getElementById("unitFormStartDate").value = u.startDate || "";
-            document.getElementById("unitFormEndDate").value = u.endDate || "";
-
-            document.querySelectorAll('input[name="unitDistricts"]').forEach(cb => cb.checked = u.districts.includes(cb.value));
-            document.querySelectorAll('input[name="unitServices"]').forEach(cb => cb.checked = u.services.includes(cb.value));
-        }
-
-        function saveUnitForm(e) {
-            e.preventDefault();
-            const id = document.getElementById("unitFormId").value;
-            const name = document.getElementById("unitFormName").value.trim();
-            const startDate = document.getElementById("unitFormStartDate").value;
-            const endDate = document.getElementById("unitFormEndDate").value;
-
-            const selectedDistricts = Array.from(document.querySelectorAll('input[name="unitDistricts"]:checked')).map(cb => cb.value);
-            const selectedServices = Array.from(document.querySelectorAll('input[name="unitServices"]:checked')).map(cb => cb.value);
-
-            if (!name || selectedDistricts.length === 0 || selectedServices.length === 0) {
-                return showToast("請填寫單位全銜並至少選擇一個區域與類型！", "error");
-            }
-
-            if (id) {
-                const u = unitsData.find(x => x.id === id);
-                if (u) {
-                    u.name = name;
-                    u.districts = selectedDistricts;
-                    u.services = selectedServices;
-                    u.startDate = startDate;
-                    u.endDate = endDate;
-                }
-            } else {
-                unitsData.push({
-                    id: "U" + Date.now(),
-                    name, districts: selectedDistricts, services: selectedServices,
-                    startDate, endDate, isPaused: false, pauseReason: ""
-                });
-            }
-
-            saveAllToStorage();
-            renderUnitsTable();
-            filterOtherUnitsDropdown();
-            updateFairRecommendUnit();
-            closeUnitModal();
-            showToast("B 單位資料已成功儲存", "success");
-        }
-
-        function closeUnitModal() {
-            document.getElementById("unitModal").classList.add("hidden");
-        }
-
-        function openPauseModal(unitId) {
-            const u = unitsData.find(x => x.id === unitId);
-            if (!u) return;
-            document.getElementById("pauseUnitId").value = u.id;
-            document.getElementById("pauseUnitName").value = u.name;
-            document.getElementById("pauseStatusSelect").value = u.isPaused ? "PAUSED" : "NORMAL";
-            document.getElementById("pauseReasonInput").value = u.pauseReason || "";
-            document.getElementById("pauseModal").classList.remove("hidden");
-        }
-
-        function closePauseModal() {
-            document.getElementById("pauseModal").classList.add("hidden");
-        }
-
-        function savePauseState() {
-            const id = document.getElementById("pauseUnitId").value;
-            const status = document.getElementById("pauseStatusSelect").value;
-            const reason = document.getElementById("pauseReasonInput").value.trim();
-
+        if (id) {
             const u = unitsData.find(x => x.id === id);
-            if (u) {
-                u.isPaused = (status === "PAUSED");
-                u.pauseReason = reason;
-                saveAllToStorage();
-                renderUnitsTable();
-                filterOtherUnitsDropdown();
-                updateFairRecommendUnit();
-                closePauseModal();
-                showToast("暫停/恢復狀態已更新", "success");
-            }
+            if (u) { u.name = name; u.districts = selectedDistricts; u.services = selectedServices; u.startDate = startDate; u.endDate = endDate; }
+        } else {
+            unitsData.push({ id: "U" + Date.now(), name, districts: selectedDistricts, services: selectedServices, startDate, endDate, isPaused: false, pauseReason: "" });
         }
+        saveAllToStorage(); renderUnitsTable(); filterOtherUnitsDropdown(); updateFairRecommendUnit(); closeUnitModal(); showToast("B 單位儲存成功", "success");
+    }
 
-        function deleteUnit(unitId) {
-            if (confirm("確定刪除此 B 單位？")) {
-                unitsData = unitsData.filter(x => x.id !== unitId);
-                saveAllToStorage();
-                renderUnitsTable();
-                filterOtherUnitsDropdown();
-                updateFairRecommendUnit();
-            }
+    function closeUnitModal() { document.getElementById("unitModal").classList.add("hidden"); }
+
+    function openPauseModal(id) {
+        const u = unitsData.find(x => x.id === id);
+        if (!u) return;
+        document.getElementById("pauseUnitId").value = u.id;
+        document.getElementById("pauseUnitName").value = u.name;
+        document.getElementById("pauseStatusSelect").value = u.isPaused ? "PAUSED" : "NORMAL";
+        document.getElementById("pauseReasonInput").value = u.pauseReason || "";
+        document.getElementById("pauseModal").classList.remove("hidden");
+    }
+
+    function closePauseModal() { document.getElementById("pauseModal").classList.add("hidden"); }
+
+    function savePauseState() {
+        const id = document.getElementById("pauseUnitId").value;
+        const status = document.getElementById("pauseStatusSelect").value;
+        const reason = document.getElementById("pauseReasonInput").value.trim();
+        const u = unitsData.find(x => x.id === id);
+        if (u) {
+            u.isPaused = (status === "PAUSED");
+            u.pauseReason = reason;
+            saveAllToStorage(); renderUnitsTable(); filterOtherUnitsDropdown(); updateFairRecommendUnit(); closePauseModal(); showToast("狀態已更新", "success");
         }
+    }
 
-        // --- EXPORT EXCEL REPORTS (SheetJS) ---
-        function exportExcelRaw() {
-            const allRecords = [...fairRecordsData, ...otherRecordsData];
-            const ws = XLSX.utils.json_to_sheet(allRecords);
-            const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, "所有派案原始資料");
-            XLSX.writeFile(wb, `115年長照派案原始資料檔_${new Date().toISOString().split('T')[0]}.xlsx`);
-        }
+    function deleteUnit(id) {
+        if (confirm("確定刪除此單位？")) { unitsData = unitsData.filter(x => x.id !== id); saveAllToStorage(); renderUnitsTable(); filterOtherUnitsDropdown(); updateFairRecommendUnit(); }
+    }
 
-        function exportExcelSuccess() {
-            const list = [...fairRecordsData, ...otherRecordsData]
-                .filter(r => r.status === "可提供服務")
-                .map(r => ({
-                    "A個管職編": r.managerId,
-                    "A個管姓名": r.managerName,
-                    "派案日期": r.dispatchDate,
-                    "個案姓名": r.caseName,
-                    "個案ID": r.caseId,
-                    "服務區域": r.district,
-                    "服務類型": r.service,
-                    "服務單位全銜": r.unitName,
-                    "照會時效(工作天)": calculateWorkdays(r.passDate, r.referralDate),
-                    "服務時效(工作天)": calculateWorkdays(r.referralDate, r.firstServiceDate)
-                }));
+    // 匯出 Excel
+    function exportExcelRaw() {
+        const ws = XLSX.utils.json_to_sheet([...fairRecordsData, ...otherRecordsData]);
+        const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "所有派案原始資料");
+        XLSX.writeFile(wb, `長照派案原始資料_${new Date().toISOString().split('T')[0]}.xlsx`);
+    }
 
-            const ws = XLSX.utils.json_to_sheet(list);
-            const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, "派案成功清冊");
-            XLSX.writeFile(wb, `長照派案成功清冊_${new Date().toISOString().split('T')[0]}.xlsx`);
-        }
+    function exportExcelSuccess() {
+        const list = [...fairRecordsData, ...otherRecordsData].filter(r => r.status === "可提供服務").map(r => ({
+            "A個管職編": r.managerId, "A個管姓名": r.managerName, "派案日期": r.dispatchDate, "個案姓名": r.caseName,
+            "個案ID": r.caseId, "服務區域": r.district, "服務類型": r.service, "服務單位全銜": r.unitName,
+            "照會時效(天)": calculateWorkdays(r.passDate, r.referralDate), "服務時效(天)": calculateWorkdays(r.referralDate, r.firstServiceDate)
+        }));
+        const ws = XLSX.utils.json_to_sheet(list); const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "派案成功清冊");
+        XLSX.writeFile(wb, `派案成功清冊_${new Date().toISOString().split('T')[0]}.xlsx`);
+    }
 
-        function exportExcelUnaccepted() {
-            const list = [...fairRecordsData, ...otherRecordsData]
-                .filter(r => r.status === "未收案")
-                .map(r => ({
-                    "A個管": `${r.managerName}(${r.managerId})`,
-                    "派案日期": r.dispatchDate,
-                    "個案姓名": r.caseName,
-                    "個案ID": r.caseId,
-                    "服務區域": r.district,
-                    "服務類型": r.service,
-                    "服務單位名稱": r.unitName,
-                    "未收案原因": r.unacceptedReason || "未指定"
-                }));
+    function exportExcelUnaccepted() {
+        const list = [...fairRecordsData, ...otherRecordsData].filter(r => r.status === "未收案").map(r => ({
+            "A個管": `${r.managerName}(${r.managerId})`, "派案日期": r.dispatchDate, "個案姓名": r.caseName, "個案ID": r.caseId,
+            "服務區域": r.district, "服務類型": r.service, "服務單位名稱": r.unitName, "未收案原因": r.unacceptedReason || "未指定"
+        }));
+        const ws = XLSX.utils.json_to_sheet(list); const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "未收案清冊");
+        XLSX.writeFile(wb, `未收案清冊_${new Date().toISOString().split('T')[0]}.xlsx`);
+    }
 
-            const ws = XLSX.utils.json_to_sheet(list);
-            const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, "未收案清冊");
-            XLSX.writeFile(wb, `長照未收案清冊_${new Date().toISOString().split('T')[0]}.xlsx`);
-        }
+    function exportExcelSpecialty() {
+        const list = [...fairRecordsData, ...otherRecordsData].filter(r => r.service === "專業服務").map(r => ({
+            "A個管": `${r.managerName}(${r.managerId})`, "派案日期": r.dispatchDate, "個案姓名": r.caseName, "個案ID": r.caseId,
+            "服務區域": r.district, "服務單位名稱": r.unitName, "收案情形": r.status === "PENDING" ? "未回覆" : r.status
+        }));
+        const ws = XLSX.utils.json_to_sheet(list); const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "專業服務清冊");
+        XLSX.writeFile(wb, `專業服務清冊_${new Date().toISOString().split('T')[0]}.xlsx`);
+    }
 
-        function exportExcelSpecialty() {
-            const list = [...fairRecordsData, ...otherRecordsData]
-                .filter(r => r.service === "專業服務")
-                .map(r => ({
-                    "A個管": `${r.managerName}(${r.managerId})`,
-                    "派案日期": r.dispatchDate,
-                    "個案姓名": r.caseName,
-                    "個案ID": r.caseId,
-                    "服務區域": r.district,
-                    "服務單位名稱": r.unitName,
-                    "收案情形": r.status === "PENDING" ? "未回覆" : r.status
-                }));
+    function exportExcelMatching() {
+        const list = otherRecordsData.filter(r => r.dispatchType === "服務媒合").map(r => ({
+            "A個管": `${r.managerName}(${r.managerId})`, "派案日期": r.dispatchDate, "個案姓名": r.caseName, "個案ID": r.caseId,
+            "服務區域": r.district, "服務單位名稱": r.unitName, "收案情形": r.status === "PENDING" ? "未回覆" : r.status
+        }));
+        const ws = XLSX.utils.json_to_sheet(list); const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "服務媒合清冊");
+        XLSX.writeFile(wb, `服務媒合清冊_${new Date().toISOString().split('T')[0]}.xlsx`);
+    }
 
-            const ws = XLSX.utils.json_to_sheet(list);
-            const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, "專業服務清冊");
-            XLSX.writeFile(wb, `專業服務個案清冊_${new Date().toISOString().split('T')[0]}.xlsx`);
-        }
-
-        function exportExcelMatching() {
-            const list = otherRecordsData
-                .filter(r => r.dispatchType === "服務媒合")
-                .map(r => ({
-                    "A個管": `${r.managerName}(${r.managerId})`,
-                    "派案日期": r.dispatchDate,
-                    "個案姓名": r.caseName,
-                    "個案ID": r.caseId,
-                    "服務區域": r.district,
-                    "服務單位名稱": r.unitName,
-                    "收案情形": r.status === "PENDING" ? "未回覆" : r.status
-                }));
-
-            const ws = XLSX.utils.json_to_sheet(list);
-            const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, "服務媒合清冊");
-            XLSX.writeFile(wb, `服務媒合個案清冊_${new Date().toISOString().split('T')[0]}.xlsx`);
-        }
-
-        // --- UTILS: TOAST MESSAGE ---
-        function showToast(msg, type = 'info') {
-            const toast = document.getElementById("toast");
-            const toastMsg = document.getElementById("toastMsg");
-            const toastIcon = document.getElementById("toastIcon");
-
-            toastMsg.textContent = msg;
-            if (type === 'error') {
-                toastIcon.className = "fa-solid fa-circle-exclamation text-red-400";
-            } else {
-                toastIcon.className = "fa-solid fa-circle-check text-emerald-400";
-            }
-
-            toast.classList.remove("hidden");
-            setTimeout(() => toast.classList.add("hidden"), 3000);
-        }
-    </script>
+    function showToast(msg, type = 'info') {
+        const toast = document.getElementById("toast");
+        document.getElementById("toastMsg").textContent = msg;
+        document.getElementById("toastIcon").className = type === 'error' ? "fa-solid fa-circle-exclamation text-red-400" : "fa-solid fa-circle-check text-emerald-400";
+        toast.classList.remove("hidden");
+        setTimeout(() => toast.classList.add("hidden"), 3000);
+    }
+</script>
 </body>
 </html>
